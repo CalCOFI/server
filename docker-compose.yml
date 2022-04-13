@@ -1,0 +1,69 @@
+version: "3.7"
+
+volumes:
+  caddy_data:
+  caddy_config:
+  shiny_apps:
+  postgis_data:
+
+services:
+  caddy:
+    container_name: caddy
+    image: caddy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    volumes:
+      - $PWD/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+      - /share:/share    
+
+  rstudio:
+    build: ./rstudio-shiny
+    container_name: rstudio
+    environment:
+      ROOT: 'true'
+      USER: admin
+      PASSWORD: $PASSWORD
+      ADD: shiny
+    ports:
+      - 8787:8787
+      - 3838:3838
+      - 8888:8888    
+    restart: unless-stopped
+    volumes:
+      - /share:/share    
+      - shiny_apps:/srv/shiny-server
+      
+  postgis:
+    container_name: postgis
+    image: postgis/postgis:latest
+    environment:
+      POSTGRES_DB: gis
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: $PASSWORD
+    volumes:
+      - postgis_data:/var/lib/postgresql
+      - /share:/share
+    restart: unless-stopped
+    healthcheck:
+      test: 'exit 0'
+    ports:
+      - 5432:5432
+
+  pg_tileserv:
+    environment:
+      DATABASE_URL: postgres://admin:$PASSWORD@postgis:5432/gis
+    image: pramsey/pg_tileserv:latest
+    build:
+      context: ./pg_tileserv
+      dockerfile: Dockerfile.alpine
+      args:
+        VERSION: latest
+    container_name: pg_tileserv
+    depends_on:
+      - postgis
+    ports:
+      - 7800:7800
