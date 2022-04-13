@@ -1,0 +1,15 @@
+rstudio.calcofi.io {
+  reverse_proxy rstudio:8787
+}
+
+shiny.calcofi.io {
+  reverse_proxy rstudio:3838
+}
+
+api.calcofi.io {
+  reverse_proxy rstudio:8888
+}
+
+tile.calcofi.io {
+  reverse_proxy pg_tileserv:7800
+}
