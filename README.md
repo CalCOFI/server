@@ -6,17 +6,19 @@ calcofi.io server setup for R Shiny apps, RStudio IDE, R Plumber API, temporary 
 
 * [Google Domains - DNS](https://domains.google.com/registrar/calcofi.io/dns) as bdbest@gmail.com; authorized ben@ecoquants.com
 
-### TODO: Setup SubDomains
+### Setup SubDomains
 
-Type: A, Name:
+Type: A; Data: 34.123.152.210; Name:
 
-now:
+- 
 - api
 - tile
 - rstudio
 - shiny
 
-later:
+Type: CNAME, Data: calcofi.io., Name: www.calcofi.io
+
+TODO:
 - erddap
 - ckan
 - geo
@@ -186,11 +188,16 @@ sudo docker-compose up -d
 eg after updating caddy/Caddyfile
 
 ```bash
-C=caddy
-docker stop $C
-docker rm $C
+docker stop caddy
+docker rm caddy
 docker-compose up -d
-docker logs $C
+docker logs caddy
 ```
 
+## Access db remotely
+
+
+* [Firewall – VPC network – calcofi – Google Cloud Platform](https://console.cloud.google.com/networking/firewalls/list?_ga=2.206034068.649621881.1649877354-1246367375.1647519755&project=calcofi)
+
+Created firewall `allow-postgresql` on port 5432.
 

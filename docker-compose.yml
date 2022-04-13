@@ -55,15 +55,15 @@ services:
       - 5432:5432
 
   pg_tileserv:
+    container_name: pg_tileserv
     environment:
       DATABASE_URL: postgres://admin:$PASSWORD@postgis:5432/gis
     image: pramsey/pg_tileserv:latest
     build:
       context: ./pg_tileserv
       dockerfile: Dockerfile.alpine
-      args:
+      args: 
         VERSION: latest
-    container_name: pg_tileserv
     depends_on:
       - postgis
     ports:
