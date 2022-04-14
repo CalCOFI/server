@@ -201,3 +201,96 @@ docker logs caddy
 
 Created firewall `allow-postgresql` on port 5432.
 
+
+## Add user(s)
+
+### host
+
+On host machine (see SSH above).
+
+```bash
+sudo su 
+echo 'umask 002' >> /etc/profile
+
+# user=bbest
+# user=cdobbelaere
+user=superjai
+pass=S3cretpass!
+
+# userdel $user; groupdel $user
+
+# add user inside rstudio docker container from host
+useradd -m -p $(openssl passwd -crypt $pass) $user
+
+# change password for existing user
+# echo usermod -p "$pass" $user
+# usermod -p $(openssl passwd -crypt $pass) $user
+
+# setup (every user) primary group to staff
+usermod -aG staff $user
+usermod -aG sudo $user
+usermod -g staff $user
+groups $user
+# confirm groups of user and record uid for next step on rstudio instance
+id $user
+```
+
+### rstudio
+
+In Terminal as admin logged into [rstudio.calcofi.io](https://rstudio.calcofi.io).
+
+```bash
+# setup (once) staff to be shared by admin, and default permissions 775
+sudo su 
+gpasswd -ag admin staff
+usermod -aG staff admin
+usermod -g staff admin # set default group to staff for user admin
+echo 'umask 002' >> /etc/profile
+
+# override RStudio's default group read only with group read & write
+printf "Sys.umask('2')\n" >> /usr/local/lib/R/etc/Rprofile.site
+# vs quick fix in Terminal of rstudio.marineenergy.app: sudo chmod -R g+w *
+
+# Add shiny to staff so has permission to install libraries into `/usr/local/lib/R/site-library` and write files
+usermod -aG staff shiny
+
+# set primary group to staff
+usermod -g staff shiny
+#confirm primary group set to staff
+id shiny
+# uid=998(shiny) gid=50(staff) groups=50(staff)
+
+# enter user name and id matched from host
+# user=bbest; uid=1001
+# user=cdobbelaere; uid=1003
+user=superjai; uid=1004
+pass=S3cretpass!
+
+# usermod -g $user $user
+# userdel $user; groupdel $user
+
+# add user inside rstudio docker container from host
+useradd -m -p $(openssl passwd -crypt $pass) -u $uid $user
+
+# change password for existing user
+# echo usermod -p "$pass" $user
+# usermod -p $(openssl passwd -crypt $pass) $user
+
+# setup (every user) primary group to staff
+usermod -aG staff $user
+usermod -aG sudo $user
+usermod -aG shiny $user
+usermod -g staff $user
+groups $user
+# confirm groups of user
+id $user
+
+# setup symbolic links in home dir
+ln -s /share                /home/$user/share
+ln -s /share/data           /home/$user/data
+ln -s /share/github         /home/$user/github
+ln -s /srv/shinyapps        /home/$user/shiny-apps
+ln -s /var/log/shiny-server /home/$user/shiny-logs
+```
+
+
