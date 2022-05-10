@@ -83,6 +83,8 @@ ssh -i ~/.ssh/google_compute_engine bbest@instance1.calcofi.io
 
 Created firewall `allow-sftp` on port 22.
 
+<img width="492" alt="image" src="https://user-images.githubusercontent.com/2837257/167685879-d74b5165-da3a-4642-9419-b7ba53123b9e.png">
+
 ## `/share`
 
 ```bash
