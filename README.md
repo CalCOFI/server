@@ -295,4 +295,20 @@ ln -s /srv/shinyapps        /home/$user/shiny-apps
 ln -s /var/log/shiny-server /home/$user/shiny-logs
 ```
 
+## 🛣️ Roadmap
 
+Marina and Renae are both UCSD staff and we are in the process of defining longer-term maintenance along with any training needed.
+
+There are a four tiers of software ranging from most critical now (1) to ideal someday (4):
+
+1. **Database API**\
+The most flexible, secure way to provide the public access to the CalCOFI database is through an application programming interface (API), which can parse input arguments, execute the database query and format the results. You can visit the current prototype at [api.calcofi.io](https://api.calcofi.io/) (source code: [plumber.R](https://github.com/CalCOFI/api/blob/main/plumber.R)). We are currently using the R-based library Plumber ([rplumber.io](https://www.rplumber.io/)) to generate the API, and evaluating whether to migrate to a Python-based API generator like [Flask](https://flask.palletsprojects.com/) given Marina's comfort with Python over R. A Postgresql (version 13.5) database with PostGIS spatial extension (version 3.1) is already running on the calcofiweb server that Marina is administering. The hope here is that we can also host this API on the calcofiweb server, e.g. [api.calcofi.org](http://api.calcofi.org/) (versus the interim instance that I am temporarily hosting at [calcofi.io](http://calcofi.io/)). See [docker-compose.yml](https://github.com/CalCOFI/server/blob/e9d6cb41a298af99424e038adaa6fe26ae16d107/docker-compose.yml#L23-L38) for Docker install using the `rstudio` service.
+
+1. **Spatial API**\
+The makers of the PostGIS database have created very lightweight web services with the Go programming language to provide vector tiles with [pg_tileserv](https://github.com/CrunchyData/pg_tileserv) and GeoJSON with [pg_featureserv](https://github.com/CrunchyData/pg_featureserv). Try [tile.calcofi.io](https://tile.calcofi.io/) to see the default vector tile rendering of spatial layers. These services are especially powerful APIs for developing interactive online mapping applications and reports. See [docker-compose.yml](https://github.com/CalCOFI/server/blob/e9d6cb41a298af99424e038adaa6fe26ae16d107/docker-compose.yml#L57-L70) for Docker install of the `pg_tileserv` service.
+
+1. **Apps**\
+The [Shiny](https://shiny.rstudio.com/) web framework makes it very easy to create applications to visualize data using [htmlwidgets](http://www.htmlwidgets.org/) and responsive to user inputs and interactions. For instance, check out the app being developed by UCSB undergrads at [shiny.calcofi.io/capstone](https://shiny.calcofi.io/capstone/). The [RStudio Server](https://www.rstudio.com/products/rstudio/#rstudio-server) provides a fully mature IDE for creating and debugging these applications, including installing required R libraries. See [docker-compose.yml](https://github.com/CalCOFI/server/blob/e9d6cb41a298af99424e038adaa6fe26ae16d107/docker-compose.yml#L23-L38) for Docker install of the `rstudio` service.
+
+1. **Portal**\
+Eventually, we hope to showcase how CalCOFI datasets interoperate with all the relevant portals for maximizing discovery and use across the marine oceanographic and ecological communities. By installing server node software to slice tabular and gridded datasets with [ERDDAP](https://coastwatch.pfeg.noaa.gov/erddap/index.html) as well as [IPT](https://www.gbif.org/ipt) for biogeographic searches, we can also highlight full metadata and all endpoints for a given dataset with [CKAN](https://ckan.org/). Links to the [IOOS](https://ioos.noaa.gov/) curated Docker instances and recipes for spinning these services up have been added to [github.com/CalCOFI/server/issues](https://github.com/CalCOFI/server/issues).
