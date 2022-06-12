@@ -129,10 +129,19 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o 
 
 # Update the apt package index, and install the latest version of Docker Engine and containerd, or go to the next step to install a specific versio
 sudo apt-get update
-sudo apt-get install docker-ce docker-ce-cli containerd.io
+# install docker, now with docker-compose-plugin
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
 # Verify that Docker Engine is installed correctly by running the hello-world image.
 sudo docker run hello-world
+```
+
+### OLD `docker-compose`
+
+Newer `docker compose` installed above with:
+
+```bash
+sudo apt-get install docker-compose-plugin
 ```
 
 * [Install Docker Compose | Docker Documentation](https://docs.docker.com/compose/install/)
@@ -149,11 +158,19 @@ docker-compose --version
 # docker-compose version 1.29.2, build 5becea4c
 ```
 
+### New `docker compose`
+
 ```bash
-sudo docker run --name test-web -p 80:80 -d nginx
+# Test the installation.
+docker compose version
+# Docker Compose version v2.6.0
+```
+
+```bash
+docker run --name test-web -p 80:80 -d nginx
 
 # confirm working
-sudo docker ps
+docker ps
 curl http://localhost
 ```
 
