@@ -196,10 +196,10 @@ cd server
 echo 'PASSWORD=C*******!' > .env
 
 # docker launch as daemon
-sudo docker-compose up -d
+docker compose up -d
 
 # To rebuild this image you must use:
-#   docker-compose up --build
+#   docker compose up --build
 ```
 
 ### Rebuild caddy 
@@ -209,7 +209,7 @@ eg after updating caddy/Caddyfile
 ```bash
 docker stop caddy
 docker rm caddy
-docker-compose up -d
+docker compose up -d
 docker logs caddy
 ```
 
