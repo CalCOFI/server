@@ -124,6 +124,8 @@ ssh -i ~/.ssh/google_compute_engine bbest@instance1.calcofi.io
 
 Created firewall `allow-sftp` on port 22.
 
+<img width="492" alt="image" src="https://user-images.githubusercontent.com/2837257/167685879-d74b5165-da3a-4642-9419-b7ba53123b9e.png">
+
 ## `/share`
 
 ```bash
@@ -168,10 +170,19 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o 
 
 # Update the apt package index, and install the latest version of Docker Engine and containerd, or go to the next step to install a specific versio
 sudo apt-get update
-sudo apt-get install docker-ce docker-ce-cli containerd.io
+# install docker, now with docker-compose-plugin
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
 # Verify that Docker Engine is installed correctly by running the hello-world image.
 sudo docker run hello-world
+```
+
+### OLD `docker-compose`
+
+Newer `docker compose` installed above with:
+
+```bash
+sudo apt-get install docker-compose-plugin
 ```
 
 * [Install Docker Compose | Docker Documentation](https://docs.docker.com/compose/install/)
@@ -188,11 +199,19 @@ docker-compose --version
 # docker-compose version 1.29.2, build 5becea4c
 ```
 
+### New `docker compose`
+
 ```bash
-sudo docker run --name test-web -p 80:80 -d nginx
+# Test the installation.
+docker compose version
+# Docker Compose version v2.6.0
+```
+
+```bash
+docker run --name test-web -p 80:80 -d nginx
 
 # confirm working
-sudo docker ps
+docker ps
 curl http://localhost
 ```
 
@@ -218,10 +237,10 @@ cd server
 echo 'PASSWORD=C*******!' > .env
 
 # docker launch as daemon
-sudo docker-compose up -d
+docker compose up -d
 
 # To rebuild this image you must use:
-#   docker-compose up --build
+#   docker compose up --build
 ```
 
 ### Rebuild caddy 
@@ -231,7 +250,7 @@ eg after updating caddy/Caddyfile
 ```bash
 docker stop caddy
 docker rm caddy
-docker-compose up -d
+docker compose up -d
 docker logs caddy
 ```
 
@@ -334,6 +353,7 @@ ln -s /srv/shinyapps        /home/$user/shiny-apps
 ln -s /var/log/shiny-server /home/$user/shiny-logs
 ```
 
+<<<<<<< HEAD
 ## Database update to Marina's latest
 
 ```bash
@@ -412,3 +432,20 @@ crontab -e
 0 0 * * 1-5 /root/backup_db.sh
 ```
 
+## 🛣️ Roadmap
+
+Marina and Renae are both UCSD staff and we are in the process of defining longer-term maintenance along with any training needed.
+
+There are a four tiers of software ranging from most critical now (1) to ideal someday (4):
+
+1. **Database API**\
+The most flexible, secure way to provide the public access to the CalCOFI database is through an application programming interface (API), which can parse input arguments, execute the database query and format the results. You can visit the current prototype at [api.calcofi.io](https://api.calcofi.io/) (source code: [plumber.R](https://github.com/CalCOFI/api/blob/main/plumber.R)). We are currently using the R-based library Plumber ([rplumber.io](https://www.rplumber.io/)) to generate the API, and evaluating whether to migrate to a Python-based API generator like [Flask](https://flask.palletsprojects.com/) given Marina's comfort with Python over R. A Postgresql (version 13.5) database with PostGIS spatial extension (version 3.1) is already running on the calcofiweb server that Marina is administering. The hope here is that we can also host this API on the calcofiweb server, e.g. [api.calcofi.org](http://api.calcofi.org/) (versus the interim instance that I am temporarily hosting at [calcofi.io](http://calcofi.io/)). See [docker-compose.yml](https://github.com/CalCOFI/server/blob/e9d6cb41a298af99424e038adaa6fe26ae16d107/docker-compose.yml#L23-L38) for Docker install using the `rstudio` service.
+
+1. **Spatial API**\
+The makers of the PostGIS database have created very lightweight web services with the Go programming language to provide vector tiles with [pg_tileserv](https://github.com/CrunchyData/pg_tileserv) and GeoJSON with [pg_featureserv](https://github.com/CrunchyData/pg_featureserv). Try [tile.calcofi.io](https://tile.calcofi.io/) to see the default vector tile rendering of spatial layers. These services are especially powerful APIs for developing interactive online mapping applications and reports. See [docker-compose.yml](https://github.com/CalCOFI/server/blob/e9d6cb41a298af99424e038adaa6fe26ae16d107/docker-compose.yml#L57-L70) for Docker install of the `pg_tileserv` service.
+
+1. **Apps**\
+The [Shiny](https://shiny.rstudio.com/) web framework makes it very easy to create applications to visualize data using [htmlwidgets](http://www.htmlwidgets.org/) and responsive to user inputs and interactions. For instance, check out the app being developed by UCSB undergrads at [shiny.calcofi.io/capstone](https://shiny.calcofi.io/capstone/). The [RStudio Server](https://www.rstudio.com/products/rstudio/#rstudio-server) provides a fully mature IDE for creating and debugging these applications, including installing required R libraries. See [docker-compose.yml](https://github.com/CalCOFI/server/blob/e9d6cb41a298af99424e038adaa6fe26ae16d107/docker-compose.yml#L23-L38) for Docker install of the `rstudio` service.
+
+1. **Portal**\
+Eventually, we hope to showcase how CalCOFI datasets interoperate with all the relevant portals for maximizing discovery and use across the marine oceanographic and ecological communities. By installing server node software to slice tabular and gridded datasets with [ERDDAP](https://coastwatch.pfeg.noaa.gov/erddap/index.html) as well as [IPT](https://www.gbif.org/ipt) for biogeographic searches, we can also highlight full metadata and all endpoints for a given dataset with [CKAN](https://ckan.org/). Links to the [IOOS](https://ioos.noaa.gov/) curated Docker instances and recipes for spinning these services up have been added to [github.com/CalCOFI/server/issues](https://github.com/CalCOFI/server/issues).
