@@ -26,7 +26,9 @@ TODO:
 - www-dev
 - drupal
 
-## Machine: Google Cloud VM instance-1
+## Virtual machine instance
+
+### OLD: Google Cloud VM instance-1
 
 * [VM instances – Compute Engine – calcofi – Google Cloud Platform](https://console.cloud.google.com/compute/instances?project=calcofi) as ben@ecoquants.com
 
@@ -39,7 +41,46 @@ TODO:
 - Storage
   - 20 GB SCSI
 
+### NEW: Contabo instance
+
 ## `SSH`
+
+### NEW: Contabo instance
+
+#### SSH setup
+
+On personal Mac:
+
+```bash
+# generate private and public keys
+ssh-keygen -t rsa
+
+# show public key (for later copying into clipboard)
+cat /root/.ssh/id_rsa.pub
+```
+
+On server:
+
+After running `ssh root@ssh.calcofi.io` and entering password in Google Drive calcofi/private/[root@shell.calcofi.io_pass.txt](https://drive.google.com/file/d/1G1rPnDX0ijlYACHsdFA9srP77kHHHHTq/view?usp=sharing) (only Ben, Erin, Marina have access for now):
+
+```bash
+# add public key (from clipboard above) to end of this file
+vi /root/.ssh/authorized_keys
+```
+
+Further reference:
+
+* [How to Use SSH Keys with Your VPS? | Contabo Blog](https://contabo.com/blog/how-to-use-ssh-keys-with-your-vps/#linux)
+
+#### SSH setup
+
+Now login to server is as simple as:
+
+```bash
+ssh root@ssh.calcofi.io
+```
+
+## OLD: Google instance
 
 ### browser; OR
 
@@ -242,7 +283,7 @@ In Terminal as admin logged into [rstudio.calcofi.io](https://rstudio.calcofi.io
 ```bash
 # setup (once) staff to be shared by admin, and default permissions 775
 sudo su 
-gpasswd -ag admin staff
+gpasswd -a admin -g staff
 usermod -aG staff admin
 usermod -g staff admin # set default group to staff for user admin
 echo 'umask 002' >> /etc/profile
@@ -293,4 +334,81 @@ ln -s /srv/shinyapps        /home/$user/shiny-apps
 ln -s /var/log/shiny-server /home/$user/shiny-logs
 ```
 
+## Database update to Marina's latest
+
+```bash
+dropdb -U admin gis
+createdb -U admin gis
+psql -U admin -d gis --command='CREATE ROLE mfrants WITH SUPERUSER';
+
+cd /share/db_bkup
+psql -U admin -d gis --echo-errors < calcofidb_2022-06-14.sql
+```
+
+## Database backups
+
+### `rclone`: install and configure 
+
+Installed `rclone` on host instance with:
+
+```bash
+apt install rclone
+```
+
+Configured with:
+
+```bash
+rclone config
+```
+
+to look like Google Drive calcofi/private/[rclone_config](https://docs.google.com/document/d/1jhKpTWiEvy8ZdaYyR1oucOuu0v8KXy8AFRsVXCQwGYw/edit) Google Doc.
+
+See `rclone` documentation:
+
+* [Install](https://rclone.org/install/)
+* [Usage](https://rclone.org/docs/)
+* [Google drive](https://rclone.org/drive/)
+* [rclone config](https://rclone.org/commands/rclone_config/)
+* [rclone config show](https://rclone.org/commands/rclone_config_show/)
+* [rclone sync](https://rclone.org/commands/rclone_sync/)
+
+### `cron`
+
+```bash
+# check crontab status
+
+# run 
+crontab -e
+
+47 11 * * 1-5 /root/backup_db.sh
+```
+
+```
+echo "test" > /share/db_backup/test_$(date +%Y-%m-%d).tmp
+```
+
+`vi /root/backup_db.sh`:
+
+```bash
+#!/bin/bash
+
+# execute in postgis container the postgres dump of the gis database using a zipped output and date stamp in the filename
+docker exec postgis pg_dump -Fc gis -U admin > /share/db_backup/gis_$(date +%Y-%m-%d).dump
+
+# synchronize database backup folder with destination Google Drive folder
+rclone sync /share/db_backup remote:db_backup
+
+# remove all files (type f) modified longer than 30 days ago under /share/db_backup
+find /share/db_backup -name "*.dump" -type f -mtime +30 -delete
+```
+
+```bash
+chmod +x /root/backup_db.sh 
+crontab -e
+```
+
+```
+# m h  dom mon dow   command
+0 0 * * 1-5 /root/backup_db.sh
+```
 
