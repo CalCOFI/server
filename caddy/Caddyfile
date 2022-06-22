@@ -13,3 +13,7 @@ api.calcofi.io {
 tile.calcofi.io {
   reverse_proxy pg_tileserv:7800
 }
+
+tile.bbnj.io {
+  reverse_proxy bbnj_tile:7801
+}

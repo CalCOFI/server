@@ -365,6 +365,29 @@ cd /share/db_bkup
 psql -U admin -d gis --echo-errors < calcofidb_2022-06-14.sql
 ```
 
+and locally on Mac:
+
+```bash
+psql -d gis --command='CREATE ROLE mfrants WITH SUPERUSER'
+  psql -d gis --command='CREATE ROLE admin WITH SUPERUSER'
+psql -d gis --echo-errors < calcofidb.sql
+```
+
+
+Ben restoring from pg_dump
+
+```bash
+dropdb gis
+
+createdb gis
+
+dump='/Users/bbest/My Drive/projects/calcofi/db_backup/gis_2022-06-20.dump'
+echo $dump
+
+pg_restore --verbose --create --dbname=gis $dump
+```
+
+
 ## Database backups
 
 ### `rclone`: install and configure 
