@@ -14,6 +14,14 @@ tile.calcofi.io {
   reverse_proxy pg_tileserv:7800
 }
 
-tile.bbnj.io {
+tile.bbnj.app {
   reverse_proxy bbnj_tile:7801
+}
+
+rstudio.bbnj.app {
+  reverse_proxy rstudio:8787
+}
+
+shiny.bbnj.app {
+  reverse_proxy rstudio:3838
 }
