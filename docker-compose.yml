@@ -70,7 +70,7 @@ services:
       - 7800:7800
 
   tile_bbnj:
-    container_name: pg_tileserv
+    container_name: tile_bbnj
     environment:
       DATABASE_URL: postgres://admin:$PASSWORD@postgis:5432/bbnj
     image: pramsey/pg_tileserv:latest
