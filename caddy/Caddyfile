@@ -15,7 +15,7 @@ tile.calcofi.io {
 }
 
 tile.bbnj.app {
-  reverse_proxy bbnj_tile:7801
+  reverse_proxy tile_bbnj:7801
 }
 
 rstudio.bbnj.app {
