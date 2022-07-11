@@ -472,3 +472,140 @@ The [Shiny](https://shiny.rstudio.com/) web framework makes it very easy to crea
 
 1. **Portal**\
 Eventually, we hope to showcase how CalCOFI datasets interoperate with all the relevant portals for maximizing discovery and use across the marine oceanographic and ecological communities. By installing server node software to slice tabular and gridded datasets with [ERDDAP](https://coastwatch.pfeg.noaa.gov/erddap/index.html) as well as [IPT](https://www.gbif.org/ipt) for biogeographic searches, we can also highlight full metadata and all endpoints for a given dataset with [CKAN](https://ckan.org/). Links to the [IOOS](https://ioos.noaa.gov/) curated Docker instances and recipes for spinning these services up have been added to [github.com/CalCOFI/server/issues](https://github.com/CalCOFI/server/issues).
+
+## Rebuild with Marina 2022-06-06
+
+### Creat Virtual Machine
+
+Create Virtual Machine (VM) Instance on Google Cloud Console.
+
+```
+gcloud compute instances create shiny-server --project=ucsd-sio-calcofi --zone=us-central1-a --machine-type=e2-standard-2 --network-interface=network-tier=PREMIUM,subnet=default --maintenance-policy=MIGRATE --provisioning-model=STANDARD --service-account=199066946721-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --tags=http-server,https-server --create-disk=auto-delete=yes,boot=yes,device-name=shiny-server,image=projects/debian-cloud/global/images/debian-11-bullseye-v20220621,mode=rw,size=40,type=projects/ucsd-sio-calcofi/zones/us-central1-a/diskTypes/pd-balanced --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any
+```
+
+### Install docker & git
+
+```bash
+# check version of Linux
+uname -a
+# Linux shiny-server 5.10.0-15-cloud-amd64 #1 SMP Debian 5.10.120-1 (2022-06-09) x86_64 GNU/Linux
+
+# install git
+sudo apt update
+sudo apt install git
+git --version
+# git version 2.30.2
+
+# install docker per https://docs.docker.com/engine/install/debian/
+sudo apt-get remove docker docker-engine docker.io containerd runc
+sudo apt-get install \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+```
+
+### Launch docker instance
+
+Setup folders:
+- `/share` for sharing across docker containers and host machine
+- `/share/github` for storing Github repositories
+- `/share/github` for storing Github repositories
+
+```bash
+sudo mkdir /share
+sudo mkdir /share/github
+
+# permissions before 
+ls -la
+# drwxr-xr-x  2 root root 4096 Jul  6 16:37 github
+
+# check groups
+sudo groups bebest
+# bebest adm dip video plugdev google-sudoers
+sudo groups mfrants
+# mfrants adm dip video plugdev
+
+# change group writable
+sudo chmod g+w /share/github
+sudo chgrp adm /share/github
+
+# permissions after
+ls -la
+# drwxrwxr-x  2 root adm  4096 Jul  6 16:37 github
+
+# get repo with docker configs:
+cd /share/github
+git clone https://github.com/CalCOFI/server.git
+
+cd /share/github/server
+
+# set env variable for password
+echo 'PASSWORD=*secrethere*' > .env
+
+sudo docker compose  up -d
+
+sudo docker ps -a
+```
+
+## DNS
+
+* [Reserving a static external IP address | Compute Engine Documentation | Google Cloud](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#:~:text=To%20reserve%20a%20static%20external,used%20with%20global%20load%20balancers.)
+
+```
+POST https://www.googleapis.com/compute/v1/projects/ucsd-sio-calcofi/regions/us-central1/addresses
+{
+  "description": "IP address for Shiny & Postgres server",
+  "name": "shiny-server-ip",
+  "networkTier": "PREMIUM",
+  "region": "projects/ucsd-sio-calcofi/regions/us-central1"
+}
+```
+
+- Permanent IP: 34.123.163.255
+
+* [Google Domains - DNS](https://domains.google.com/registrar/calcofi.io/dns)
+
+
+## BB 2022-07-10
+
+```
+dropdb gis
+
+createdb gis
+
+dump='/Users/bbest/My Drive/projects/calcofi/db_backup/gis_2022-07-08.dump'
+echo $dump
+
+pg_restore --verbose --create --dbname=gis $dump
+
+psql -d gis --command='ALTER ROLE "admin" WITH LOGIN;'
+```
+
+Logged into rstudio.calcofi.io, in Terminal:
+
+```bash
+cd /share/github
+
+
+git clone https://github.com/CalCOFI/api.git
+git clone https://github.com/CalCOFI/apps.git
+git clone https://github.com/CalCOFI/scripts.git
+git clone https://github.com/CalCOFI/capstone.git
+git clone https://github.com/CalCOFI/calcofi4r.git
+```
+
+### TODO
+
+- [ ] update `pg_restore` instructions
+- [ ] `rclone` install & configure for db bkups to Gdrive
+- [ ] add groups and users, eg bebest & mfrants
+
+
