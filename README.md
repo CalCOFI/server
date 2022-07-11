@@ -473,7 +473,7 @@ The [Shiny](https://shiny.rstudio.com/) web framework makes it very easy to crea
 1. **Portal**\
 Eventually, we hope to showcase how CalCOFI datasets interoperate with all the relevant portals for maximizing discovery and use across the marine oceanographic and ecological communities. By installing server node software to slice tabular and gridded datasets with [ERDDAP](https://coastwatch.pfeg.noaa.gov/erddap/index.html) as well as [IPT](https://www.gbif.org/ipt) for biogeographic searches, we can also highlight full metadata and all endpoints for a given dataset with [CKAN](https://ckan.org/). Links to the [IOOS](https://ioos.noaa.gov/) curated Docker instances and recipes for spinning these services up have been added to [github.com/CalCOFI/server/issues](https://github.com/CalCOFI/server/issues).
 
-## Rebuild with Marina 2022-06-06
+## Rebuild with Marina 2022-07-06
 
 ### Creat Virtual Machine
 
