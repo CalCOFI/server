@@ -69,17 +69,3 @@ services:
     ports:
       - 7800:7800
 
-  tile_bbnj:
-    container_name: tile_bbnj
-    environment:
-      DATABASE_URL: postgres://admin:$PASSWORD@postgis:5432/bbnj
-    image: pramsey/pg_tileserv:latest
-    build:
-      context: ./pg_tileserv
-      dockerfile: Dockerfile.alpine
-      args: 
-        VERSION: latest
-    depends_on:
-      - postgis
-    ports:
-      - "7801:7800"
