@@ -550,7 +550,7 @@ cd /share/github/server
 # set env variable for password
 echo 'PASSWORD=*secrethere*' > .env
 
-sudo docker compose  up -d
+sudo docker compose up -d
 
 sudo docker ps -a
 ```
@@ -574,7 +574,61 @@ POST https://www.googleapis.com/compute/v1/projects/ucsd-sio-calcofi/regions/us-
 * [Google Domains - DNS](https://domains.google.com/registrar/calcofi.io/dns)
 
 
-## BB 2022-07-10
+## Setup SSH access
+
+* [Quickstart: Install the Google Cloud CLI | Google Cloud CLI Documentation](https://cloud.google.com/sdk/docs/install-sdk)
+
+```bash
+gcloud init
+```
+
+Ben's configuration
+
+```
+Settings from your current configuration [default] are:
+compute:
+  region: us-central1
+  zone: us-central1-a
+core:
+  account: bebest@ucsd.edu
+  disable_usage_reporting: 'False'
+  project: ucsd-sio-calcofi
+```
+
+Add the keys per:
+
+1. [Create SSH keys | Compute Engine Documentation | Google Cloud](https://cloud.google.com/compute/docs/connect/create-ssh-keys)
+2. [Add SSH keys to VMs | Compute Engine Documentation | Google Cloud](https://cloud.google.com/compute/docs/connect/add-ssh-keys#os-login)
+
+First, create the local key:
+
+```bash
+# ssh-keygen -t rsa -f ~/.ssh/KEY_FILENAME -C USERNAME -b 2048
+ssh-keygen -t rsa -f ~/.ssh/calcofi.io_bebest_key -C bebest -b 2048
+```
+
+
+```bash
+# gcloud compute os-login ssh-keys add \
+#    --key-file=KEY_FILE_PATH \
+#    --project=PROJECT \
+#    --ttl=EXPIRE_TIME
+gcloud compute os-login ssh-keys add \
+    --key-file=/Users/bbest/.ssh/calcofi.io_bebest_key.pub \
+    --project=ucsd-sio-calcofi \
+    --ttl=365d
+```
+
+- [Step 1: Enable or disable OS Login](https://cloud.google.com/compute/docs/oslogin/set-up-oslogin#enable_oslogin)
+
+```
+ssh -i /Users/bbest/.ssh/calcofi.io_bebest_key bebest@ssh.calcofi.io
+```
+
+
+## Database Restore
+
+After spinning up a fresh postgis instance from the docker-compose.yml (`sudo docker compose up -d`), we restore from the latest `gis_YYYY-MM-DD.dump` in [db_backup - Google Drive](https://drive.google.com/drive/u/0/folders/12Z2J6S9xD1E0BO15O7yqyQBRm2M3LgW5).
 
 ```
 dropdb gis
@@ -608,4 +662,11 @@ git clone https://github.com/CalCOFI/calcofi4r.git
 - [ ] `rclone` install & configure for db bkups to Gdrive
 - [ ] add groups and users, eg bebest & mfrants
 
+
+### 2022-07-11
+
+```bash
+# execute bash with interactive terminal on host postgis
+sudo docker exec -it postgis bash
+```
 
