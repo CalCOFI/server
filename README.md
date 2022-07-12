@@ -1,6 +1,11 @@
 # server
 calcofi.io server setup for R Shiny apps, RStudio IDE, R Plumber API, temporary PostGIS database, pg_tileserv
 
+## TODO
+
+- [ ] update `pg_restore` instructions
+- [ ] `rclone` install & configure for db bkups to Gdrive
+- [ ] add groups and users, eg bebest & mfrants
 
 ## Domain: calcofi.io
 
@@ -631,46 +636,13 @@ gcloud compute os-login ssh-keys add \
 ssh -i /Users/bbest/.ssh/calcofi.io_bebest_key bebest@ssh.calcofi.io
 ```
 
+...
 
-## Database Restore
+## 2022-07-12 BB
+
+### Restore database from bkup dump
 
 After spinning up a fresh postgis instance from the docker-compose.yml (`sudo docker compose up -d`), we restore from the latest `gis_YYYY-MM-DD.dump` in [db_backup - Google Drive](https://drive.google.com/drive/u/0/folders/12Z2J6S9xD1E0BO15O7yqyQBRm2M3LgW5).
-
-```
-dropdb gis
-
-createdb gis
-
-dump='/Users/bbest/My Drive/projects/calcofi/db_backup/gis_2022-07-08.dump'
-echo $dump
-
-pg_restore --verbose --create --dbname=gis $dump
-
-psql -d gis --command='ALTER ROLE "admin" WITH LOGIN;'
-```
-
-Logged into rstudio.calcofi.io, in Terminal:
-
-```bash
-cd /share/github
-
-
-git clone https://github.com/CalCOFI/api.git
-git clone https://github.com/CalCOFI/apps.git
-git clone https://github.com/CalCOFI/scripts.git
-git clone https://github.com/CalCOFI/capstone.git
-git clone https://github.com/CalCOFI/calcofi4r.git
-```
-
-### TODO
-
-- [ ] update `pg_restore` instructions
-- [ ] `rclone` install & configure for db bkups to Gdrive
-- [ ] add groups and users, eg bebest & mfrants
-
-### 2022-07-12
-
-#### Restore database from bkup dump
 
 From [rstudio.calcofi.io](https://rstudio.calcofi.io), in Files pane, uploaded the following db dump from [db_backup - Google Drive](https://drive.google.com/drive/u/0/folders/12Z2J6S9xD1E0BO15O7yqyQBRm2M3LgW5):
 
@@ -702,3 +674,64 @@ psql -U admin -d gis --command='ALTER ROLE root WITH LOGIN;'
 pg_restore --verbose --create --dbname=gis '/share/data/gis_2022-07-12.dump'
 ```
 
+### add db password, git repos
+
+From [rstudio.calcofi.io](https://rstudio.calcofi.io), in Terminal pane as user admin...
+
+Paste contents of [admin@db.calcofi.io_pass.txt](https://drive.google.com/file/d/1G-qphDLhWuBGqJyrmEHwGrKodM8hdEz4/view?usp=sharing) into `/share/.calcofi_db_pass.txt`
+
+```bash
+# write password to file
+echo 'C@1cofi!' > /share/.calcofi_db_pass.txt
+
+# symbolic link for user shiny so apps find passwords
+sudo ln -s /share/.calcofi_db_pass.txt /home/shiny/.calcofi_db_pass.txt
+```
+
+```bash
+# change to home directory, ie /home/admin
+cd ~
+
+# symbolic link db password from home drive
+ln -s /share/.calcofi_db_pass.txt ~/.calcofi_db_pass.txt
+
+# create symbolic links from home dir for easier navigation
+ln -s /share                share
+ln -s /share/github         github
+ln -s /srv/shiny-server     shiny-apps
+ln -s /var/log/shiny-server shiny-logs
+
+# get Github repos
+cd /share/github
+sudo chown -R admin /share
+git clone https://github.com/CalCOFI/api.git
+git clone https://github.com/CalCOFI/apps.git
+git clone https://github.com/CalCOFI/scripts.git
+git clone https://github.com/CalCOFI/capstone.git
+git clone https://github.com/CalCOFI/calcofi4r.git
+```
+
+From [rstudio.calcofi.io](https://rstudio.calcofi.io)...
+
+Open `/share/github/apps/oceano/libs/db.R` and Source all followed by `dbListTables(con)` into Console to test database connection.
+
+Open `/share/github/apps/oceano/global.R` and run lines there similar to the following to install custom calcofi4r R package and any other missing R packages:
+
+```r
+devtools::install_local("/share/github/calcofi4r")
+
+librarian::shelf(
+  calcofi/calcofi4r,
+  digest, dygraphs, glue, geojsonio, here, httr2, leaflet, leaflet.extras, 
+  raster, readr, sf, shiny)
+```
+
+With `/share/github/apps/oceano/global.R` open in the Source pane, click the **Run App** button to test app.
+
+```bash
+# turn on apps listed at https://calcofi.io
+cd /srv/shiny-server
+sudo ln -s /share/github/apps/oceano oceano
+sudo ln -s /share/github/apps/dashboard dashboard
+sudo ln -s /share/github/capstone/scripts/shiny capstone
+```
