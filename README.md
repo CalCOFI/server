@@ -657,6 +657,7 @@ Ben restoring from pg_dump
 
 ```bash
 # execute bash with interactive terminal on host postgis
+# this will give access to psql, createdb and all other postgres-related commands
 sudo docker exec -it postgis bash
 
 # recreate fresh database
