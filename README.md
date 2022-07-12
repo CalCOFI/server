@@ -55,6 +55,12 @@ On personal Mac:
 # generate private and public keys
 ssh-keygen -t rsa
 
+# update host key
+ssh-keygen -t rsa -R 154.53.57.44
+
+
+ssh root@154.53.57.44
+
 # show public key (for later copying into clipboard)
 cat /root/.ssh/id_rsa.pub
 ```
@@ -369,7 +375,7 @@ and locally on Mac:
 
 ```bash
 psql -d gis --command='CREATE ROLE mfrants WITH SUPERUSER'
-  psql -d gis --command='CREATE ROLE admin WITH SUPERUSER'
+psql -d gis --command='CREATE ROLE admin WITH SUPERUSER'
 psql -d gis --echo-errors < calcofidb.sql
 ```
 
@@ -662,11 +668,37 @@ git clone https://github.com/CalCOFI/calcofi4r.git
 - [ ] `rclone` install & configure for db bkups to Gdrive
 - [ ] add groups and users, eg bebest & mfrants
 
+### 2022-07-12
 
-### 2022-07-11
+#### Restore database from bkup dump
+
+From [rstudio.calcofi.io](https://rstudio.calcofi.io), in Files pane, uploaded the following db dump from [db_backup - Google Drive](https://drive.google.com/drive/u/0/folders/12Z2J6S9xD1E0BO15O7yqyQBRm2M3LgW5):
+
+```
+/share/data/gis_2022-07-12.dump
+```
+
+From [VM instances – Compute Engine – ucsd-sio-calcofi – Google Cloud console](https://console.cloud.google.com/compute/instances?project=ucsd-sio-calcofi), SSH console:
+
+Then restored 
+Ben restoring from pg_dump
 
 ```bash
 # execute bash with interactive terminal on host postgis
 sudo docker exec -it postgis bash
+
+# recreate fresh database
+dropdb -U admin gis
+createdb -U admin gis
+
+# create roles for mfrants and root
+psql -U admin -d gis --command='CREATE ROLE mfrants WITH SUPERUSER LOGIN';
+psql -U admin -d gis --command='ALTER ROLE mfrants WITH LOGIN;'
+psql -U admin -d gis --command='CREATE ROLE root WITH SUPERUSER LOGIN';
+psql -U admin -d gis --command='ALTER ROLE root WITH LOGIN;'
+
+
+# restore from dump
+pg_restore --verbose --create --dbname=gis '/share/data/gis_2022-07-12.dump'
 ```
 
