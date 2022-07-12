@@ -715,6 +715,19 @@ From [rstudio.calcofi.io](https://rstudio.calcofi.io)...
 
 Open `/share/github/apps/oceano/libs/db.R` and Source all followed by `dbListTables(con)` into Console to test database connection.
 
+### get api.calcofi.io up
+
+Get [api.calcofi.io](https://api.calcofi.io) up and running. From [rstudio.calcofi.io](https://rstudio.calcofi.io), File -> Open Project... `/share/github/api/api.Rproj`. Open `README.md`, and install `pm2` per instructions.
+
+### setup git
+
+```bash
+git config --global user.email "ben@ecoquants.com"
+git config --global user.name "Ben Best"
+```
+
+### get oceano app up
+
 Open `/share/github/apps/oceano/global.R` and run lines there similar to the following to install custom calcofi4r R package and any other missing R packages:
 
 ```r
@@ -728,10 +741,21 @@ librarian::shelf(
 
 With `/share/github/apps/oceano/global.R` open in the Source pane, click the **Run App** button to test app.
 
+### turn on app links
+
 ```bash
 # turn on apps listed at https://calcofi.io
 cd /srv/shiny-server
 sudo ln -s /share/github/apps/oceano oceano
 sudo ln -s /share/github/apps/dashboard dashboard
 sudo ln -s /share/github/capstone/scripts/shiny capstone
+```
+
+### turn on tile.calcofi.io
+
+Now that database is populated, SSH into host and rerun to get tile container started.
+
+```bash
+# docker (re)launch as daemon
+docker compose up -d
 ```
