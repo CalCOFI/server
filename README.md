@@ -33,12 +33,13 @@ TODO:
 
 ## Virtual machine instance
 
-### OLD: Google Cloud VM instance-1
+### Google Cloud VM `shiny-server`
 
 * [VM instances – Compute Engine – calcofi – Google Cloud Platform](https://console.cloud.google.com/compute/instances?project=calcofi) as ben@ecoquants.com
 
-- Hostname: instance1.calcofi.io
-- Creation time: Apr 13, 2022
+- Name: shiny-server
+- Creation time: Jul 6, 2022
+- Zone: us-central1-a
 - Machine configuration
   - Machine type: e2-medium
 - Networking
@@ -61,10 +62,10 @@ On personal Mac:
 ssh-keygen -t rsa
 
 # update host key
-ssh-keygen -t rsa -R 154.53.57.44
+ssh-keygen -t rsa -R 34.123.163.255
 
 
-ssh root@154.53.57.44
+ssh root@34.123.163.255
 
 # show public key (for later copying into clipboard)
 cat /root/.ssh/id_rsa.pub
@@ -109,24 +110,31 @@ ssh root@ssh.calcofi.io
 In Terminal on Mac:
 
 ```bash
-gcloud auth login
-gcloud config set project calcofi
-gcloud compute ssh instance-1
+gcloud auth login # choose bebest@ucsd.edu
+gcloud config set project ucsd-sio-calcofi
+gcloud compute ssh shiny-server
 ```
 
-Connected to instance-1:
+Connected to shiny-server:
 
 ```
-bbest@instance1:~$ pwd
-/home/bbest
+bebest_ucsd_edu@shiny-server:~$ pwd
+/home/bebest_ucsd_edu
 ```
 
 Or now directly with:
 
 ```bash
-ssh -i ~/.ssh/google_compute_engine bbest@instance1.calcofi.io
+ssh -i ~/.ssh/google_compute_engine bebest_ucsd_edu@ssh.calcofi.io
 ```
 
+### SSH Tunnel connection to postgis DB
+
+```bash
+ssh \
+  -i ~/.ssh/google_compute_engine \
+  -L 5432:localhost:5432 bebest_ucsd_edu@ssh.calcofi.io
+```
 
 ### Cyberduck
 
