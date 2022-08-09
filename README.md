@@ -130,6 +130,8 @@ ssh -i ~/.ssh/google_compute_engine bebest_ucsd_edu@ssh.calcofi.io
 
 ### SSH Tunnel connection to postgis DB
 
+* [Secure TCP/IP Connections with SSH Tunnels | PostgreSQL docs](https://www.postgresql.org/docs/current/ssh-tunnels.html)
+
 ```bash
 ssh \
   -i ~/.ssh/google_compute_engine \
