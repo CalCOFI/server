@@ -683,7 +683,7 @@ Paste contents of [admin@db.calcofi.io_pass.txt](https://drive.google.com/file/d
 
 ```bash
 # write password to file
-echo 'C@1cofi!' > /share/.calcofi_db_pass.txt
+echo 'secret' > /share/.calcofi_db_pass.txt
 
 # symbolic link for user shiny so apps find passwords
 sudo ln -s /share/.calcofi_db_pass.txt /home/shiny/.calcofi_db_pass.txt
