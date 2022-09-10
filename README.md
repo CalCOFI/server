@@ -374,7 +374,6 @@ ln -s /srv/shinyapps        /home/$user/shiny-apps
 ln -s /var/log/shiny-server /home/$user/shiny-logs
 ```
 
-<<<<<<< HEAD
 ## Database update to Marina's latest
 
 ```bash
