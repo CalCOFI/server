@@ -47,56 +47,11 @@ TODO:
 - Storage
   - 20 GB SCSI
 
-### NEW: Contabo instance
-
-## `SSH`
-
-### NEW: Contabo instance
-
-#### SSH setup
-
-On personal Mac:
-
-```bash
-# generate private and public keys
-ssh-keygen -t rsa
-
-# update host key
-ssh-keygen -t rsa -R 34.123.163.255
-
-
-ssh root@34.123.163.255
-
-# show public key (for later copying into clipboard)
-cat /root/.ssh/id_rsa.pub
-```
-
-On server:
-
-After running `ssh root@ssh.calcofi.io` and entering password in Google Drive calcofi/private/[root@shell.calcofi.io_pass.txt](https://drive.google.com/file/d/1G1rPnDX0ijlYACHsdFA9srP77kHHHHTq/view?usp=sharing) (only Ben, Erin, Marina have access for now):
-
-```bash
-# add public key (from clipboard above) to end of this file
-vi /root/.ssh/authorized_keys
-```
-
-Further reference:
-
-* [How to Use SSH Keys with Your VPS? | Contabo Blog](https://contabo.com/blog/how-to-use-ssh-keys-with-your-vps/#linux)
-
-#### SSH setup
-
-Now login to server is as simple as:
-
-```bash
-ssh root@ssh.calcofi.io
-```
-
-## OLD: Google instance
+## Google instance
 
 ### browser; OR
 
-* [VM instances – Compute Engine – calcofi – Google Cloud Platform](https://console.cloud.google.com/compute/instances?project=calcofi) as ben@ecoquants.com
+* [VM instances – Compute Engine – calcofi – Google Cloud Platform](https://console.cloud.google.com/compute/instances?project=ucsd-sio-calcofi&authuser=3) as bebest@ucsd.edu
 
 * `SSH` buttton
 
@@ -128,9 +83,102 @@ Or now directly with:
 ssh -i ~/.ssh/google_compute_engine bebest_ucsd_edu@ssh.calcofi.io
 ```
 
+## Setup permissions on server and rstudio container
+
+```bash
+# setup (once) staff to be shared by admin, and default permissions 775
+docker exec rstudio gpasswd -a admin staff
+docker exec rstudio sh -c "echo 'umask 002' >> /etc/profile"
+
+# override RStudio's default group read only with group read & write
+docker exec rstudio sh -c "echo 'Sys.umask('2')\n' >> /usr/local/lib/R/etc/Rprofile.site"
+# vs quick fix in Terminal of rstudio.calcofi.io: sudo chmod -R g+w *
+
+# log into rstudio container
+docker exec -it rstudio bash
+
+# Add shiny to staff so has permission to install libraries into `/usr/local/lib/R/site-library` and write files
+usermod -aG staff shiny
+
+# set primary group to staff
+usermod -g staff shiny
+#confirm primary group set to staff
+id shiny
+# uid=998(shiny) gid=50(staff) groups=50(staff)
+
+# setup permissions for group writable
+chmod g+w -R /share/github
+chgrp -R staff /share/github
+```
+
+## Add user
+
+```bash
+# set user and pass
+USER=edweber
+USER=mfrants
+PASS=secretp@ssHere
+
+# check
+echo "USER: $USER; PASS: $PASS"
+
+# delete user
+# sudo userdel $USER; groupdel $USER
+
+# add user to host
+exit
+sudo useradd -m -p $(openssl passwd -crypt $PASS) $USER
+sudo usermod -aG sudo $USER
+
+# add user to docker group
+sudo usermod -aG docker $USER
+
+# log into rstudio container
+docker exec -it rstudio bash
+
+# set user and pass
+USER=edweber
+USER=mfrants
+PASS=secretp@ssHere
+
+# check
+echo "USER: $USER; PASS: $PASS"
+
+# add user inside rstudio docker container from host
+useradd -m -p $(openssl passwd -crypt $PASS) $USER
+# echo usermod -p "$pass" $USER
+# usermod -p $(openssl passwd -crypt $pass) $USER
+
+# setup (every user) primary group to staff
+usermod -aG staff $USER
+usermod -aG sudo $USER
+usermod -aG shiny $USER
+usermod -g staff $USER
+groups $USER
+
+# setup symbolic links in home dir
+ln -s /share                /home/$USER/share
+ln -s /share/data           /home/$USER/data
+ln -s /share/github         /home/$USER/github
+ln -s /srv/shiny-server     /home/$USER/shiny-apps
+ln -s /var/log/shiny-server /home/$USER/shiny-logs
+
+# copy over database password 
+cp /home/admin/.calcofi_db_pass.txt /home/$USER/.calcofi_db_pass.txt
+
+# check in container
+docker exec -it rstudio-shiny bash
+cat /etc/passwd
+exit
+```
+
 ### SSH Tunnel connection to postgis DB
 
 * [Secure TCP/IP Connections with SSH Tunnels | PostgreSQL docs](https://www.postgresql.org/docs/current/ssh-tunnels.html)
+
+In order for to connect to the Postgres database as if it were on your local machine by tunneling, you will need:
+
+
 
 ```bash
 ssh \
@@ -282,97 +330,6 @@ docker logs caddy
 
 Created firewall `allow-postgresql` on port 5432.
 
-
-## Add user(s)
-
-### host
-
-On host machine (see SSH above).
-
-```bash
-sudo su 
-echo 'umask 002' >> /etc/profile
-
-# user=bbest
-# user=cdobbelaere
-user=superjai
-pass=S3cretpass!
-
-# userdel $user; groupdel $user
-
-# add user inside rstudio docker container from host
-useradd -m -p $(openssl passwd -crypt $pass) $user
-
-# change password for existing user
-# echo usermod -p "$pass" $user
-# usermod -p $(openssl passwd -crypt $pass) $user
-
-# setup (every user) primary group to staff
-usermod -aG staff $user
-usermod -aG sudo $user
-usermod -g staff $user
-groups $user
-# confirm groups of user and record uid for next step on rstudio instance
-id $user
-```
-
-### rstudio
-
-In Terminal as admin logged into [rstudio.calcofi.io](https://rstudio.calcofi.io).
-
-```bash
-# setup (once) staff to be shared by admin, and default permissions 775
-sudo su 
-gpasswd -a admin -g staff
-usermod -aG staff admin
-usermod -g staff admin # set default group to staff for user admin
-echo 'umask 002' >> /etc/profile
-
-# override RStudio's default group read only with group read & write
-printf "Sys.umask('2')\n" >> /usr/local/lib/R/etc/Rprofile.site
-# vs quick fix in Terminal of rstudio.marineenergy.app: sudo chmod -R g+w *
-
-# Add shiny to staff so has permission to install libraries into `/usr/local/lib/R/site-library` and write files
-usermod -aG staff shiny
-
-# set primary group to staff
-usermod -g staff shiny
-#confirm primary group set to staff
-id shiny
-# uid=998(shiny) gid=50(staff) groups=50(staff)
-
-# enter user name and id matched from host
-# user=bbest; uid=1001
-# user=cdobbelaere; uid=1003
-user=superjai; uid=1004
-pass=S3cretpass!
-
-# usermod -g $user $user
-# userdel $user; groupdel $user
-
-# add user inside rstudio docker container from host
-useradd -m -p $(openssl passwd -crypt $pass) -u $uid $user
-
-# change password for existing user
-# echo usermod -p "$pass" $user
-# usermod -p $(openssl passwd -crypt $pass) $user
-
-# setup (every user) primary group to staff
-usermod -aG staff $user
-usermod -aG sudo $user
-usermod -aG shiny $user
-usermod -g staff $user
-groups $user
-# confirm groups of user
-id $user
-
-# setup symbolic links in home dir
-ln -s /share                /home/$user/share
-ln -s /share/data           /home/$user/data
-ln -s /share/github         /home/$user/github
-ln -s /srv/shinyapps        /home/$user/shiny-apps
-ln -s /var/log/shiny-server /home/$user/shiny-logs
-```
 
 ## Database update to Marina's latest
 
