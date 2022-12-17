@@ -117,6 +117,7 @@ chgrp -R staff /share/github
 # set user and pass
 USER=edweber
 USER=mfrants
+USER=bebest
 PASS=secretp@ssHere
 
 # check
@@ -139,6 +140,7 @@ docker exec -it rstudio bash
 # set user and pass
 USER=edweber
 USER=mfrants
+USER=bebest
 PASS=secretp@ssHere
 
 # check
@@ -246,52 +248,6 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
 sudo docker run hello-world
 ```
 
-### OLD `docker-compose`
-
-Newer `docker compose` installed above with:
-
-```bash
-sudo apt-get install docker-compose-plugin
-```
-
-* [Install Docker Compose | Docker Documentation](https://docs.docker.com/compose/install/)
-
-```bash
-# Run this command to download the current stable release of Docker Compose:
-sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-
-# Apply executable permissions to the binary:
-sudo chmod +x /usr/local/bin/docker-compose
-
-# Test the installation.
-docker-compose --version
-# docker-compose version 1.29.2, build 5becea4c
-```
-
-### New `docker compose`
-
-```bash
-# Test the installation.
-docker compose version
-# Docker Compose version v2.6.0
-```
-
-```bash
-docker run --name test-web -p 80:80 -d nginx
-
-# confirm working
-docker ps
-curl http://localhost
-```
-
-Test: http://instance1.calcofi.io
-
-```bash
-sudo docker stop test-web
-# sudo docker rm test-web
-sudo docker ps -a
-```
-
 ## Docker with Caddy
 
 * [caddy + rstudio | Rocker Project](https://www.rocker-project.org/use/networking/)
@@ -322,14 +278,6 @@ docker rm caddy
 docker compose up -d
 docker logs caddy
 ```
-
-## Access db remotely
-
-
-* [Firewall – VPC network – calcofi – Google Cloud Platform](https://console.cloud.google.com/networking/firewalls/list?_ga=2.206034068.649621881.1649877354-1246367375.1647519755&project=calcofi)
-
-Created firewall `allow-postgresql` on port 5432.
-
 
 ## Database update to Marina's latest
 
