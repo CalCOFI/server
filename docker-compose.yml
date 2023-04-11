@@ -70,7 +70,7 @@ services:
       - 7800:7800
 
   pg_rest:
-      container_name: pg_rest
+    container_name: pg_rest
     environment:
       PGRST_DB_URI: postgres://ro_user:$ROPASS@postgis:5432/gis
       PGRST_OPENAPI_SERVER_PROXY_URI: http://127.0.0.1:3000      
