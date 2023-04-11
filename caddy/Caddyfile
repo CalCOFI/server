@@ -13,3 +13,11 @@ api.calcofi.io {
 tile.calcofi.io {
   reverse_proxy pg_tileserv:7800
 }
+
+rest.calcofi.io {
+  reverse_proxy pg_rest:3000
+}
+
+swagger.calcofi.io {
+  reverse_proxy pg_swagger:8080
+}

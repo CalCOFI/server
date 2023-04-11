@@ -674,3 +674,16 @@ Now that database is populated, SSH into host and rerun to get tile container st
 # docker (re)launch as daemon
 docker compose up -d
 ```
+
+## setup PostgREST
+
+- create read only user:
+
+```sql
+CREATE USER ro_user WITH PASSWORD 'your_password';
+GRANT CONNECT ON DATABASE gis TO ro_user;
+GRANT USAGE ON SCHEMA public TO ro_user;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO ro_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO ro_user;
+```
+
