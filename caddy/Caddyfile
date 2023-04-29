@@ -21,3 +21,9 @@ rest.calcofi.io {
 swagger.calcofi.io {
   reverse_proxy pg_swagger:8080
 }
+
+file.calcofi.io {
+  root * /share/public
+	file_server
+}
+
