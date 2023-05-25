@@ -74,7 +74,8 @@ services:
     environment:
       PGRST_DB_URI: postgres://ro_user:$ROPASS@postgis:5432/gis
       # {"code":"PGRST000","details":"could not translate host name \"lcof1@postgis\"
-      PGRST_OPENAPI_SERVER_PROXY_URI: http://127.0.0.1:3000      
+      PGRST_OPENAPI_SERVER_PROXY_URI: http://127.0.0.1:3000
+      PGRST_DB_ANON_ROLE: ro_user  # db-anon-role
     image: postgrest/postgrest
     depends_on:
       - postgis
