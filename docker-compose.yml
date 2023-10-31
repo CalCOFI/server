@@ -62,7 +62,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: ben@ecoquants.com
       PGADMIN_DEFAULT_PASSWORD: ${PASSWORD}
       PGADMIN_LISTEN_PORT: 8088
-      PGADMIN_CONFIG_CONFIG_DATABASE_URI: "'postgresql://admin:$PASSWORD@postgis:5432/msens'"
+      PGADMIN_CONFIG_CONFIG_DATABASE_URI: "'postgresql://admin:$PASSWORD@postgis:5432/gis'"
     ports:
       - 8088:8088
     volumes:
