@@ -7,7 +7,7 @@ file.calcofi.io {
 	file_server
 }
 
-pgadmin.marinesensitivities.org {
+pgadmin.calcofi.io {
 	reverse_proxy pgadmin:8088
 }
 
