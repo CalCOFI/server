@@ -1,3 +1,20 @@
+api.calcofi.io {
+  reverse_proxy rstudio:8888
+}
+
+file.calcofi.io {
+  root * /share/public
+	file_server
+}
+
+pgadmin.marinesensitivities.org {
+	reverse_proxy pgadmin:8088
+}
+
+rest.calcofi.io {
+  reverse_proxy pg_rest:3000
+}
+
 rstudio.calcofi.io {
   reverse_proxy rstudio:8787
 }
@@ -6,24 +23,10 @@ shiny.calcofi.io {
   reverse_proxy rstudio:3838
 }
 
-api.calcofi.io {
-  reverse_proxy rstudio:8888
+swagger.calcofi.io {
+  reverse_proxy pg_swagger:8080
 }
 
 tile.calcofi.io {
   reverse_proxy pg_tileserv:7800
 }
-
-rest.calcofi.io {
-  reverse_proxy pg_rest:3000
-}
-
-swagger.calcofi.io {
-  reverse_proxy pg_swagger:8080
-}
-
-file.calcofi.io {
-  root * /share/public
-	file_server
-}
-
