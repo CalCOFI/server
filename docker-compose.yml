@@ -104,8 +104,6 @@ services:
     image: swaggerapi/swagger-ui
     depends_on:
       - pg_rest    
-    environment:
-      API_URL: http://localhost:3000/
     ports:
       - "8080:8080"
     expose:
