@@ -21,7 +21,7 @@ services:
       - /share:/share    
 
   rstudio:
-    build: ./rstudio-shiny
+    build: ./rstudio
     container_name: rstudio
     environment:
       ROOT: 'true'
@@ -31,7 +31,6 @@ services:
     ports:
       - 8787:8787
       - 3838:3838
-      - 8888:8888    
     restart: unless-stopped
     volumes:
       - /share:/share    
