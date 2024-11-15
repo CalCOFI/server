@@ -1,5 +1,5 @@
 api.calcofi.io {
-  reverse_proxy rstudio:8888
+  reverse_proxy plumber:8888
 }
 
 file.calcofi.io {
