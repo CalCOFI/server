@@ -4,34 +4,40 @@ FROM rocker/geospatial:latest
 RUN /rocker_scripts/install_shiny_server.sh
 RUN /rocker_scripts/install_python.sh
 
-EXPOSE 3838
-
+# https://github.com/CalCOFI/apps
+#   https://github.com/CalCOFI/apps/blob/main/libs/db.R
+#   https://github.com/CalCOFI/apps/blob/main/oceano/global.R
+# https://github.com/CalCOFI/api/blob/main/plumber.R
+# https://github.com/CalCOFI/SaferSeafood/blob/main/shinydashboard/global.R
 RUN install2.r --error \
-  dbplyr \
-  DiagrammeR \
-  DT \
-  flexdashboard \
-  fs \
-  glue \
-  gt \
-  here \
-  htmltools \
-  httpuv \
-  jsonlite \
-  kableExtra \
-  leaflet \
-  librarian \
-  mapedit \
-  mapview \
-  plumber \
-  Rcpp \
-  reticulate \
-  rhandsontable \
-  RPostgres \
-  shinydashboard \
-  shinyjs \
-  shinyWidgets \
-  units \
-  urltools
+  brms bslib caret corrplot DBI dbplyr DiagrammeR digest DT extrafont \
+  flexdashboard fs geos glue gt here htmltools htmlwidgets httpuv httr2 jsonlite \
+  kableExtra leaflet leaflet.extras librarian listviewer lubridate mapedit \
+  mapview markdown plumber plotly png pool purrr raster Rcpp reactlog readr \
+  reticulate rfishbase rhandsontable rmarkdown RPostgres sf shiny shinyBS \
+  shinycssloaders shinydashboard shinyjs shinyWidgets showtext sjPlot skimr sp \
+  stringr terra tibble tidymodels tidyr tidyverse units urltools webshot2 yaml \
+ && rm -rf /tmp/downloaded_packages
+
+# install R packages on Github 
+RUN installGithub.r \
+  CalCOFI/calcofi4r \
+  oceanmetrics/leaftiles \
+  && rm -rf /tmp/downloaded_packages
+  
+EXPOSE 3838  
+
+# copy files setting up permissions and users
+COPY setup_permissions.sh /tmp/setup_permissions.sh
+COPY users.csv            /tmp/users.csv
+COPY add_users.sh         /tmp/add_users.sh
+
+# run permission and user setup scripts
+RUN <<EOF
+  chmod +x /tmp/setup_permissions.sh /tmp/add_users.sh
+  /tmp/setup_permissions.sh
+  /tmp/add_users.sh
+  rm -f /tmp/setup_permissions.sh /tmp/add_users.sh /tmp/users.csv
+EOF
 
 CMD ["/init"]
