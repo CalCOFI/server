@@ -33,11 +33,10 @@ COPY users.csv            /tmp/users.csv
 COPY add_users.sh         /tmp/add_users.sh
 
 # run permission and user setup scripts
-RUN <<EOF
-  chmod +x /tmp/setup_permissions.sh /tmp/add_users.sh
-  /tmp/setup_permissions.sh
-  /tmp/add_users.sh
+RUN \
+  chmod +x /tmp/setup_permissions.sh /tmp/add_users.sh && \
+  /tmp/setup_permissions.sh && \
+  /tmp/add_users.sh && \
   rm -f /tmp/setup_permissions.sh /tmp/add_users.sh /tmp/users.csv
-EOF
 
 CMD ["/init"]
