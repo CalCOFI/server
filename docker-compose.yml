@@ -71,6 +71,17 @@ services:
     depends_on:
       - postgis
 
+  plumber:
+    container_name: plumber
+    build: ./plumber
+    ports:
+      - 8888:8888
+    restart: unless-stopped
+    volumes:
+      - /share:/share
+    depends_on:
+      - postgis
+
   pg_tileserv:
     container_name: pg_tileserv
     environment:

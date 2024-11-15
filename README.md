@@ -688,3 +688,151 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO ro_user;
 ALTER ROLE ro_user WITH PASSWORD 'new_password';
 ```
 
+## Added disk `ssd` [@bebest 2024-11-15]
+
+Since ran out of room on server, added second 100 GB disk called `ssd` to `shiny-server` in the Google Cloud Console.
+
+- [Create a new Persistent Disk volume | Compute Engine Documentation | Google Cloud](https://cloud.google.com/compute/docs/disks/add-persistent-disk)
+- [Format and mount a non-boot disk on a Linux VM | Compute Engine Documentation | Google Cloud](https://cloud.google.com/compute/docs/disks/format-mount-disk-linux)
+
+
+```bash
+# show device names
+ls -l /dev/disk/by-id/google-*
+```
+
+```
+lrwxrwxrwx 1 root root  9 Sep  1 06:35 /dev/disk/by-id/google-shiny-server -> ../../sda
+lrwxrwxrwx 1 root root 10 Sep  1 06:35 /dev/disk/by-id/google-shiny-server-part1 -> ../../sda1
+lrwxrwxrwx 1 root root 11 Sep  1 06:35 /dev/disk/by-id/google-shiny-server-part14 -> ../../sda14
+lrwxrwxrwx 1 root root 11 Sep  1 06:35 /dev/disk/by-id/google-shiny-server-part15 -> ../../sda15
+lrwxrwxrwx 1 root root  9 Nov 15 20:12 /dev/disk/by-id/google-ssd -> ../../sdb
+```
+
+```bash
+# format new disk
+sudo mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard /dev/disk/by-id/google-ssd
+
+# create dir as mount point
+sudo mkdir -p /ssd
+
+# mount disk to dir
+sudo mount -o discard,defaults /dev/disk/by-id/google-ssd /ssd
+
+# configure permissions
+sudo chmod a+w /ssd
+
+
+# Configure automatic mounting on VM restart ----
+
+# backup fstab
+sudo cp /etc/fstab /etc/fstab.backup
+
+# list the UUID for the disk
+sudo blkid /dev/disk/by-id/google-ssd
+```
+
+```
+/dev/disk/by-id/google-ssd: UUID="60d94214-11c6-4d05-9c26-41e81a81e2fa" BLOCK_SIZE="4096" TYPE="ext4"
+```
+
+```bash
+# add to fstab
+echo 'UUID=60d94214-11c6-4d05-9c26-41e81a81e2fa /ssd ext4 discard,defaults,nofail 0 2' | sudo tee -a /etc/fstab
+cat /etc/fstab
+```
+
+```
+# /etc/fstab: static file system information
+UUID=148ccc9b-f935-4a9a-8353-1a3f5f9c9d0f / ext4 rw,discard,errors=remount-ro,x-systemd.growfs 0 1
+UUID=D516-7559 /boot/efi vfat defaults 0 0
+UUID=60d94214-11c6-4d05-9c26-41e81a81e2fa /ssd ext4 discard,defaults,nofail 0 2
+```
+
+### Move `/share` and `/var/lib/docker` to `/ssd/docker`
+
+Extra disk added because we ran out of disk trying to upgrade docker images per:
+
+- [How to update existing images with docker-compose? - Stack Overflow](https://stackoverflow.com/questions/49316462/how-to-update-existing-images-with-docker-compose)
+
+```bash
+# before: disk free, human readable units
+df -h
+```
+
+```
+Filesystem      Size  Used Avail Use% Mounted on
+udev            3.9G     0  3.9G   0% /dev
+tmpfs           796M  1.1M  795M   1% /run
+/dev/sda1        40G   38G     0 100% /
+tmpfs           3.9G     0  3.9G   0% /dev/shm
+tmpfs           5.0M     0  5.0M   0% /run/lock
+/dev/sda15      124M   11M  114M   9% /boot/efi
+tmpfs           796M     0  796M   0% /run/user/1320671979
+```
+
+Note: `/` has `0` available space.
+
+So let's use symbolic link in new location after moving contents. Stop and start with 
+docker compose. Note that per our [docker-compose.yml](https://github.com/CalCOFI/server/blob/b810a07ce3a6ca4428f7b522f84681341f6d6e55/docker-compose.yml#L48), the database is in the
+Docker volume `postgis_data`.
+
+```bash
+# stop docker compose
+docker compose down
+
+# move contents
+sudo mv /var/lib/docker /ssd/docker
+sudo mv /share /ssd/share
+
+# create symbolic links
+sudo ln -s /ssd/docker /var/lib/docker
+sudo ln -s /ssd/share /share
+```
+
+```bash
+# after: disk free, human readable units
+df -h
+```
+
+```
+Filesystem      Size  Used Avail Use% Mounted on
+udev            3.9G     0  3.9G   0% /dev
+tmpfs           796M  468K  796M   1% /run
+/dev/sda1        40G  8.8G   29G  24% /
+tmpfs           3.9G     0  3.9G   0% /dev/shm
+tmpfs           5.0M     0  5.0M   0% /run/lock
+/dev/sda15      124M   11M  114M   9% /boot/efi
+tmpfs           796M     0  796M   0% /run/user/1320671979
+/dev/sdb         98G   27G   72G  28% /ssd
+```
+
+Note: `/` now has `29G` available space and the new disk mounted at `/ssd` has `72G` available.
+
+If we were only restarting docker, we'd use:
+
+```bash
+# start docker compose (if only restarting)
+docker compose up -d
+```
+
+But we're not just restarting, we're upgrading images, per:
+
+- [How to update existing images with docker-compose? - Stack Overflow](https://stackoverflow.com/questions/49316462/how-to-update-existing-images-with-docker-compose)
+
+So instead, running:
+
+```bash
+# change dir to local git clone of https://github.com/CalCOFI/server
+cd /share/github/server
+
+# confirm .env file present (not on Github) with variables set for PASSWORD and ROPASS
+cat .env
+
+# pull latest images
+docker compose pull
+docker compose up --force-recreate --build -d
+docker image prune -f
+```
+
+```bash
