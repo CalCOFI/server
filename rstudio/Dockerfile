@@ -28,15 +28,12 @@ RUN installGithub.r \
 EXPOSE 3838  
 
 # copy files setting up permissions and users
-COPY setup_permissions.sh /tmp/setup_permissions.sh
-COPY users.csv            /tmp/users.csv
-COPY add_users.sh         /tmp/add_users.sh
+#COPY setup_permissions.sh /tmp/setup_permissions.sh
+COPY users.csv    /tmp/users.csv
+COPY add_users.sh /tmp/add_users.sh
 
 # run permission and user setup scripts
-RUN \
-  chmod +x /tmp/setup_permissions.sh /tmp/add_users.sh && \
-  /tmp/setup_permissions.sh && \
-  /tmp/add_users.sh && \
-  rm -f /tmp/setup_permissions.sh /tmp/add_users.sh /tmp/users.csv
+RUN chmod +x /tmp/add_users.sh && /tmp/add_users.sh
+# cleanup: rm -f /tmp/add_users.sh /tmp/users.csv
 
 CMD ["/init"]
