@@ -4,7 +4,8 @@ api.calcofi.io {
 
 file.calcofi.io {
   root * /share/public
-	file_server
+	encode zstd gzip
+	file_server browse
 }
 
 pgadmin.calcofi.io {
