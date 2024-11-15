@@ -39,11 +39,11 @@ EOF
         git config --system push.default simple
         
         # setup symbolic links in home dir
-        ln -s /share                /home/$USER/share
-        ln -s /share/data           /home/$USER/data
-        ln -s /share/github         /home/$USER/github
-        ln -s /srv/shiny-server     /home/$USER/shiny-apps
-        ln -s /var/log/shiny-server /home/$USER/shiny-logs
+        ln -s /share                /home/$username/share
+        ln -s /share/data           /home/$username/data
+        ln -s /share/github         /home/$username/github
+        ln -s /srv/shiny-server     /home/$username/shiny-apps
+        ln -s /var/log/shiny-server /home/$username/shiny-logs
 
         echo "Added user $username with UID $uid"
     fi
