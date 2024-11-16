@@ -22,6 +22,7 @@ while IFS=, read -r username uid || [ -n "$username" ]; do
         usermod -g staff "$username"
         
         # RStudio settings
+        # https://github.com/rocker-org/rocker-versioned2/blob/master/scripts/default_user.sh
         mkdir -p "/home/${username}/.config/rstudio/"
         cat <<EOF >"/home/${username}/.config/rstudio/rstudio-prefs.json"
 {
