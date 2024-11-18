@@ -38,7 +38,7 @@ services:
       
   postgis:
     container_name: postgis
-    image: postgis/postgis:latest
+    image: postgis/postgis:17-3.5
     environment:
       POSTGRES_DB: gis
       POSTGRES_USER: admin
@@ -52,6 +52,30 @@ services:
       test: 'exit 0'
     ports:
       - 5432:5432
+      
+  pg_backups:
+    container_name: pg_backups
+    image: prodrigestivill/postgres-backup-local:17
+    restart: always
+    user: postgres:postgres # Optional: see below
+    volumes:
+      - /share/pg_backups:/backups
+      # sudo mkdir /share/pg_backups; sudo chown -R 999:999 /share/pg_backups
+    links:
+      - postgis
+    depends_on:
+      - postgis
+    environment:
+      - POSTGRES_HOST=postgis
+      - POSTGRES_DB=gis
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=${PASSWORD}
+      - POSTGRES_EXTRA_OPTS=-Z6 --blobs
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=7
+      - BACKUP_KEEP_WEEKS=4
+      - BACKUP_KEEP_MONTHS=6
+      - HEALTHCHECK_PORT=8000
 
   pgadmin:
     container_name: pgadmin
