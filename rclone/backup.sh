@@ -1,4 +1,6 @@
 #!/bin/sh
 
 set -e # exit on error
-rclone sync /share/pg_backups remote:db_backups
+
+# sync database backups to google drive
+rclone sync -v /share/pg_backups remote:db_backups
