@@ -72,7 +72,7 @@ services:
       - POSTGRES_PASSWORD=${PASSWORD}
       - POSTGRES_EXTRA_OPTS=-Z6 --blobs
       #- SCHEDULE=@daily
-      - SCHEDULE='30 16 0 * * *'
+      - SCHEDULE='33 16 0 * * *'
       - BACKUP_KEEP_DAYS=7
       - BACKUP_KEEP_WEEKS=4
       - BACKUP_KEEP_MONTHS=6
