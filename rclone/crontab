@@ -1,1 +1,1 @@
-35 16 * * * /backup.sh >> /share/logs/rclone 2>&1
+40 16 * * * /backup.sh >> /share/logs/rclone 2>&1
