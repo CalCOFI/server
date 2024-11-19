@@ -92,6 +92,7 @@ services:
       - /share/rclone:/config/rclone
       - /share:/share
       - ./rclone/crontab:/etc/crontabs/root
+      - ./rclone/backup.sh:/backup.sh
 
   pgadmin:
     container_name: pgadmin
