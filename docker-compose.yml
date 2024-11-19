@@ -77,6 +77,22 @@ services:
       - BACKUP_KEEP_MONTHS=6
       - HEALTHCHECK_PORT=8000
 
+  rclone:
+    image: rclone/rclone:latest
+    container_name: rclone
+    restart: unless-stopped
+    entrypoint: ''
+    command: 'crond -f -d 8'
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '10'
+    volumes:
+      - /share/rclone:/config/rclone
+      - /share:/share
+      - ./rclone/crontab:/etc/crontabs/root
+
   pgadmin:
     container_name: pgadmin
     image: dpage/pgadmin4:latest
