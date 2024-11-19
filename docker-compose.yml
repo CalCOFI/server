@@ -78,11 +78,9 @@ services:
       - HEALTHCHECK_PORT=8000
 
   rclone:
-    image: rclone/rclone:latest
+    build: ./rclone
     container_name: rclone
     restart: unless-stopped
-    entrypoint: ''
-    command: 'crond -f -d 8'
     logging:
       driver: 'json-file'
       options:
@@ -91,8 +89,6 @@ services:
     volumes:
       - /share/rclone:/config/rclone
       - /share:/share
-      - ./rclone/crontab:/etc/crontabs/root
-      - ./rclone/backup.sh:/backup.sh
 
   pgadmin:
     container_name: pgadmin
