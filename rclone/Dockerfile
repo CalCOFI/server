@@ -1,8 +1,8 @@
 FROM rclone/rclone:latest
 
 # Copy crontab and backup script
-COPY ./rclone/crontab /etc/crontabs/root
-COPY ./rclone/backup.sh /backup.sh
+COPY ./crontab   /etc/crontabs/root
+COPY ./backup.sh /backup.sh
 
 # Make backup script executable
 RUN chmod +x /backup.sh
