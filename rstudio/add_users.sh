@@ -30,7 +30,10 @@ while IFS=, read -r username uid || [ -n "$username" ]; do
     "always_save_history": false,
     "reuse_sessions_for_project_links": true,
     "posix_terminal_shell": "bash",
-    "editor_theme": "Tomorrow Night"
+    "initial_working_directory": "~",
+    "editor_theme": "Tomorrow Night 80s",
+    "insert_native_pipe_operator": true,
+    "rainbow_parentheses": true
 }
 EOF
         chown -R "${username}:${username}" "/home/${username}"
