@@ -31,14 +31,16 @@ psql -U admin -d postgres -c "ALTER ROLE root WITH PASSWORD '$PASSWORD';"
 createuser -U admin -s -i -d -r -l -w mfrants
 psql -U admin -d postgres -c "ALTER ROLE root WITH PASSWORD '$PASSWORD';"
 
-.env
-
 PASSWORD=$(cat /share/.calcofi_db_pass.txt)
 
+vi .env
 PASSWORD=s@Cr3t!
 ROPASS=s@Cr3t!2
 
-psql
+pg_restore -U admin -d gis gis_2024-10-18.dump
+```
+
+```sql
 CREATE USER ro_user WITH PASSWORD 'Calcof1';
 GRANT CONNECT ON DATABASE gis TO ro_user;
 GRANT USAGE ON SCHEMA public TO ro_user;
@@ -46,24 +48,21 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO ro_user;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO ro_user;
 ALTER ROLE ro_user WITH PASSWORD 'new_password';
 
-
-
-pg_restore -U admin -d gis gis_2024-10-18.dump
-```
-
 SELECT version();
-
-"PostgreSQL 17.1 (Debian 17.1-1.pgdg110+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 10.2.1-6) 10.2.1 20210110, 64-bit"
+-- "PostgreSQL 17.1 (Debian 17.1-1.pgdg110+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 10.2.1-6) 10.2.1 20210110, 64-bit"
 
 SELECT PostGIS_Version();
+-- "3.5 USE_GEOS=1 USE_PROJ=1 USE_STATS=1"
+```
 
-"3.5 USE_GEOS=1 USE_PROJ=1 USE_STATS=1"
-
+```bash
 sudo crontab -u root -l
-47 11 * * 1-5 /root/backup_db.sh
-
+# 47 11 * * 1-5 /root/backup_db.sh
 
 cat /root/backup_db.sh 
+```
+
+```bash
 #!/bin/bash
 
 # execute in postgis container the postgres dump of the gis database using a zipped output and date stamp in the filename
@@ -74,11 +73,9 @@ rclone sync /share/db_backup remote:db_backup
 
 # remove all files (type f) modified longer than 30 days ago under /share/db_backup
 find /share/db_backup -name "*.dump" -type f -mtime +30 -delete
+```
 
-
-
-https://rclone.org/install/#docker
-
+```bash
 # config on host at ~/.config/rclone/rclone.conf
 #                  /share/rclone/rclone.conf
 # data on host at ~/data
@@ -93,7 +90,15 @@ docker run --rm -it \
     --user $(id -u):$(id -g) \
     rclone/rclone \
     config
-    
+```    
+
+## rclone to backup database dumps
+
+https://rclone.org/install/#docker
+
+https://rclone.org/drive/
+
+https://rclone.org/remote_setup/
 
 Options:
 - type: drive
@@ -102,10 +107,8 @@ Options:
 - team_drive: 
 - root_folder_id: 13pWB5x59WSBR0mr9jJjkx7rri9hlUsMv
 
-https://rclone.org/drive/
 
-https://rclone.org/remote_setup/
-
+```bash
 # make sure the config is ok by listing the remotes
 sudo su -
 docker run --rm \
@@ -114,9 +117,8 @@ docker run --rm \
     --user $(id -u):$(id -g) \
     rclone/rclone \
     sync --dry-run /share/pg_backups remote:db_backups
-
-
-# rclone sync --dry-run /share/pg_backups remote:db_backups
+    
+rclone sync --dry-run /share/pg_backups remote:db_backups
 
 git pull
 docker stop pg_backups rclone
@@ -124,9 +126,7 @@ docker compose up -d --build pg_backups
 docker exec pg_backups env
 docker exec pg_backups date
 docker exec pg_backups /backup.sh
-
-
-docker exec pg_backups /backup.sh
+```
 
 ```
 Creating dump of gis database from postgis...
@@ -148,6 +148,7 @@ Cleaning older files for gis database from postgis...
 SQL backup created successfully
 ```
 
+```bash
 ls -latr /share/pg_backups
 
 docker compose up -d --no-deps --build rclone
@@ -164,7 +165,9 @@ docker exec -it rclone "pstree -apl `pidof cron`"
 docker exec -it rclone /backup.sh >> /share/logs/rclone 2>&1
 
 cat /share/logs/rclone
+```
 
+```
 Use 'docker scan' to run Snyk tests against images to find vulnerabilities and learn how to fix them
 
     sync -i /share/pg_backups/ remote:db_backups/
@@ -178,8 +181,9 @@ Use 'docker scan' to run Snyk tests against images to find vulnerabilities and l
     
     
     rclone sync --interactive SOURCE remote:DESTINATION
-    
-    
+```
+   
+```bash
 # perform mount inside Docker container, expose result to host
 mkdir -p /share/google_drive
 # --rm \
@@ -196,7 +200,7 @@ docker run -it \
     mount remote:projects/calcofi /data/google_drive &
 ls ~/data/mount
 kill %1    
-
+```
 
 - [ ] `rclone` install & configure for db bkups to Gdrive
 
