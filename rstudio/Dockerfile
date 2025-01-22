@@ -15,8 +15,8 @@ RUN install2.r --error \
   kableExtra leaflet leaflet.extras librarian listviewer lubridate mapedit \
   mapview markdown plumber plotly png pool purrr rapport raster Rcpp reactlog readr \
   reticulate rfishbase rhandsontable ritis rmarkdown RPostgres scales sf shiny shinyBS \
-  shinycssloaders shinydashboard shinyjs shinyWidgets showtext shinythemes shinytreeview sjPlot skimr sp \
-  stringr taxadb taxize terra tibble tidymodels tidyr tidyverse units urltools viridis webshot2 yaml \
+  shinycssloaders shinydashboard shinyjs shinyWidgets showtext shinythemes sjPlot skimr sp \
+  stringr terra tibble tidymodels tidyr tidyverse units urltools viridis webshot2 yaml \
  && rm -rf /tmp/downloaded_packages
 
 # install R packages on Github 
@@ -24,6 +24,7 @@ RUN installGithub.r \
   CalCOFI/calcofi4r \
   oceanmetrics/leaftiles \
   dreamRs/shinyWidgets \
+  dreamRs/shinytreeview \
   && rm -rf /tmp/downloaded_packages
   
 ARG PASSWORD
