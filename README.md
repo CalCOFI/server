@@ -238,6 +238,9 @@ Elapsed time:         1.4s
 
 ```bash
 docker logs pg_backups
+
+truncate -s 0 $(docker inspect --format='{{.LogPath}}' rstudio)
+docker compose build --no-cache rstudio > rstudio_build_log.txt 2>&1
 ```
 
 ```
@@ -245,6 +248,8 @@ docker logs pg_backups
 2024/11/19 16:37:22 new cron: '39 16 0 * * *'
 2024/11/19 16:37:22 Opening port 8000 for health checking
 ```
+
+
 
 
 ## Domain: calcofi.io
