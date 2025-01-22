@@ -9,7 +9,7 @@ while IFS=, read -r username uid || [ -n "$username" ]; do
         # Remove any carriage return from uid
         uid=$(echo "$uid" | tr -d '\r')
         
-        echo "Creating $username ($uid)"
+        echo "Creating $username ($uid) with password '$PASSWORD'"
         
         # Create user with specific UID and set password
         useradd -s /bin/bash -m -u "$uid" "$username"
@@ -53,7 +53,6 @@ EOF
         ln -s /srv/shiny-server     /home/$username/shiny-apps
         ln -s /var/log/shiny-server /home/$username/shiny-logs
 
-        echo "User $username with UID $uid added successfully."
         echo "Added user $username with UID $uid"
     fi
 done < /tmp/users.csv
