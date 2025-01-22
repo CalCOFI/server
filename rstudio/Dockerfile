@@ -11,7 +11,7 @@ RUN /rocker_scripts/install_python.sh
 # https://github.com/CalCOFI/SaferSeafood/blob/main/shinydashboard/global.R
 RUN install2.r --error \
   brms bslib caret corrplot DBI dbplyr DiagrammeR digest DT extrafont \
-  flexdashboard fs geojsonio geos glue gt here htmltools htmlwidgets httpuv httr2 jsonlite \
+  firebase flexdashboard fs geojsonio geos glue gt here htmltools htmlwidgets httpuv httr2 jsonlite \
   kableExtra leaflet leaflet.extras librarian listviewer lubridate mapedit \
   mapview markdown plumber plotly png pool purrr raster Rcpp reactlog readr \
   reticulate rfishbase rhandsontable rmarkdown RPostgres sf shiny shinyBS \
