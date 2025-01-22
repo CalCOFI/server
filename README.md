@@ -208,6 +208,45 @@ kill %1
 
 - [ ] add groups and users, eg bebest & mfrants
 
+### rclone fix
+
+```bash
+docker logs rclone
+```
+
+```
+...
+crond: USER root pid 674 cmd /backup.sh >> /share/logs/rclone 2>&1
+```
+
+```bash
+docker exec rclone cat /share/logs/rclone
+```
+
+
+```
+2025/01/22 16:40:02 NOTICE: last/gis-latest.sql.gz: Can't follow symlink without -L/--copy-links
+2025/01/22 16:40:02 NOTICE: weekly/gis-latest.sql.gz: Can't follow symlink without -L/--copy-links
+2025/01/22 16:40:02 NOTICE: daily/gis-latest.sql.gz: Can't follow symlink without -L/--copy-links
+2025/01/22 16:40:02 NOTICE: monthly/gis-latest.sql.gz: Can't follow symlink without -L/--copy-links
+2025/01/22 16:40:02 INFO  : There was nothing to transfer
+2025/01/22 16:40:02 INFO  : 
+Transferred:   	          0 B / 0 B, -, 0 B/s, ETA -
+Checks:                 8 / 8, 100%
+Elapsed time:         1.4s
+```
+
+```bash
+docker logs pg_backups
+```
+
+```
+2024/11/19 16:37:22 Running version: v0.0.11
+2024/11/19 16:37:22 new cron: '39 16 0 * * *'
+2024/11/19 16:37:22 Opening port 8000 for health checking
+```
+
+
 ## Domain: calcofi.io
 
 * [Google Domains - DNS](https://domains.google.com/registrar/calcofi.io/dns) as bdbest@gmail.com; authorized ben@ecoquants.com
