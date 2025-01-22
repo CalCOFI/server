@@ -25,11 +25,13 @@ RUN installGithub.r \
   oceanmetrics/leaftiles \
   && rm -rf /tmp/downloaded_packages
   
+ARG PASSWORD
+
 EXPOSE 3838  
 
 # add users
 COPY users.csv    /tmp/users.csv
 COPY add_users.sh /tmp/add_users.sh
-RUN chmod +x /tmp/add_users.sh && /tmp/add_users.sh
+RUN chmod +x /tmp/add_users.sh && PASSWORD=$PASSWORD /tmp/add_users.sh
 
 CMD ["/init"]

@@ -21,7 +21,10 @@ services:
       - /share:/share    
 
   rstudio:
-    build: ./rstudio
+    build:
+      context: ./rstudio
+      args:
+        PASSWORD: $PASSWORD
     container_name: rstudio
     environment:
       ROOT: 'true'
