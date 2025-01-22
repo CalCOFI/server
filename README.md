@@ -4,7 +4,208 @@ calcofi.io server setup for R Shiny apps, RStudio IDE, R Plumber API, temporary 
 ## TODO
 
 - [ ] update `pg_restore` instructions
+
+```bash
+# from host server log into postgis container
+docker exec -it postgis bash
+
+# switch to user postgres
+su - postgres
+
+# drop database
+dropdb gis
+createdb -U postgres gis
+
+# change dir to folder of backups
+cd /share/db_backup; ls
+
+# restore given date; [c]lean and [C]reate
+dropdb -U admin -f gis
+createdb -U admin gis
+
+PASSWORD=$(cat /share/.calcofi_db_pass.txt)
+
+createuser -U admin -s -i -d -r -l -w root
+psql -U admin -d postgres -c "ALTER ROLE root WITH PASSWORD '$PASSWORD';"
+
+createuser -U admin -s -i -d -r -l -w mfrants
+psql -U admin -d postgres -c "ALTER ROLE root WITH PASSWORD '$PASSWORD';"
+
+PASSWORD=$(cat /share/.calcofi_db_pass.txt)
+
+vi .env
+PASSWORD=s@Cr3t!
+ROPASS=s@Cr3t!2
+
+pg_restore -U admin -d gis gis_2024-10-18.dump
+```
+
+```sql
+CREATE USER ro_user WITH PASSWORD 'Calcof1';
+GRANT CONNECT ON DATABASE gis TO ro_user;
+GRANT USAGE ON SCHEMA public TO ro_user;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO ro_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO ro_user;
+ALTER ROLE ro_user WITH PASSWORD 'new_password';
+
+SELECT version();
+-- "PostgreSQL 17.1 (Debian 17.1-1.pgdg110+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 10.2.1-6) 10.2.1 20210110, 64-bit"
+
+SELECT PostGIS_Version();
+-- "3.5 USE_GEOS=1 USE_PROJ=1 USE_STATS=1"
+```
+
+```bash
+sudo crontab -u root -l
+# 47 11 * * 1-5 /root/backup_db.sh
+
+cat /root/backup_db.sh 
+```
+
+```bash
+#!/bin/bash
+
+# execute in postgis container the postgres dump of the gis database using a zipped output and date stamp in the filename
+docker exec postgis pg_dump -Fc gis -U admin > /share/db_backup/gis_$(date +%Y-%m-%d).dump
+
+# synchronize database backup folder with destination Google Drive folder
+rclone sync /share/db_backup remote:db_backup
+
+# remove all files (type f) modified longer than 30 days ago under /share/db_backup
+find /share/db_backup -name "*.dump" -type f -mtime +30 -delete
+```
+
+```bash
+# config on host at ~/.config/rclone/rclone.conf
+#                  /share/rclone/rclone.conf
+# data on host at ~/data
+#                 /share/pg_backups
+
+# login as root
+sudo su -
+
+# add a remote interactively
+docker run --rm -it \
+    --volume /share/rclone:/config/rclone \
+    --user $(id -u):$(id -g) \
+    rclone/rclone \
+    config
+```    
+
+## rclone to backup database dumps
+
+https://rclone.org/install/#docker
+
+https://rclone.org/drive/
+
+https://rclone.org/remote_setup/
+
+Options:
+- type: drive
+- scope: drive
+- service_account_file: /config/rclone/calcofi-ee9f51172ce7.json
+- team_drive: 
+- root_folder_id: 13pWB5x59WSBR0mr9jJjkx7rri9hlUsMv
+
+
+```bash
+# make sure the config is ok by listing the remotes
+sudo su -
+docker run --rm \
+    --volume /share/rclone:/config/rclone \
+    --volume /share:/share \
+    --user $(id -u):$(id -g) \
+    rclone/rclone \
+    sync --dry-run /share/pg_backups remote:db_backups
+    
+rclone sync --dry-run /share/pg_backups remote:db_backups
+
+git pull
+docker stop pg_backups rclone
+docker compose up -d --build pg_backups 
+docker exec pg_backups env
+docker exec pg_backups date
+docker exec pg_backups /backup.sh
+```
+
+```
+Creating dump of gis database from postgis...
+Replacing daily backup /backups/daily/gis-20241119.sql.gz file this last backup...
+'/backups/daily/gis-20241119.sql.gz' => '/backups/last/gis-20241119-164503.sql.gz'
+Replacing weekly backup /backups/weekly/gis-202447.sql.gz file this last backup...
+'/backups/weekly/gis-202447.sql.gz' => '/backups/last/gis-20241119-164503.sql.gz'
+Replacing monthly backup /backups/monthly/gis-202411.sql.gz file this last backup...
+'/backups/monthly/gis-202411.sql.gz' => '/backups/last/gis-20241119-164503.sql.gz'
+Point last backup file to this last backup...
+'/backups/last/gis-latest.sql.gz' -> 'gis-20241119-164503.sql.gz'
+Point latest daily backup to this last backup...
+'/backups/daily/gis-latest.sql.gz' -> 'gis-20241119.sql.gz'
+Point latest weekly backup to this last backup...
+'/backups/weekly/gis-latest.sql.gz' -> 'gis-202447.sql.gz'
+Point latest monthly backup to this last backup...
+'/backups/monthly/gis-latest.sql.gz' -> 'gis-202411.sql.gz'
+Cleaning older files for gis database from postgis...
+SQL backup created successfully
+```
+
+```bash
+ls -latr /share/pg_backups
+
+docker compose up -d --no-deps --build rclone
+
+docker exec -it rclone sh
+
+docker exec -it rclone date
+docker exec -it rclone cat /etc/crontabs/root
+cat /share/logs/rclone
+docker exec -it rclone sh
+grep CRON /var/log/syslog
+docker exec -it rclone pidof cron
+docker exec -it rclone "pstree -apl `pidof cron`"
+docker exec -it rclone /backup.sh >> /share/logs/rclone 2>&1
+
+cat /share/logs/rclone
+```
+
+```
+Use 'docker scan' to run Snyk tests against images to find vulnerabilities and learn how to fix them
+
+    sync -i /share/pg_backups/ remote:db_backups/
+    
+    
+    lsd remote:
+    ls remote:projects/calcofi/db_backup
+    lsd remote:projects/calcofi
+    
+    rclone lsd remote:projects/calcofi
+    
+    
+    rclone sync --interactive SOURCE remote:DESTINATION
+```
+   
+```bash
+# perform mount inside Docker container, expose result to host
+mkdir -p /share/google_drive
+# --rm \
+
+docker run -it \
+    --volume /share/rclone:/config/rclone \
+    --volume /share:/share \
+    --volume /share:/data \
+    --user $(id -u):$(id -g) \
+    rclone/rclone \
+    lsd remote:projects/calco
+    sh
+    modprobe fuse
+    mount remote:projects/calcofi /data/google_drive &
+ls ~/data/mount
+kill %1    
+```
+
 - [ ] `rclone` install & configure for db bkups to Gdrive
+
+- [db\_backup - Google Drive](https://drive.google.com/drive/u/0/folders/12Z2J6S9xD1E0BO15O7yqyQBRm2M3LgW5)
+
 - [ ] add groups and users, eg bebest & mfrants
 
 ## Domain: calcofi.io
