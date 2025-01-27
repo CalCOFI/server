@@ -14,7 +14,7 @@ RUN install2.r --error \
   firebase flexdashboard fs geojsonio geos glue gt here htmltools htmlwidgets httpuv httr2 jsonlite \
   kableExtra leaflet leaflet.extras librarian listviewer lubridate mapedit \
   mapview markdown plumber plotly png pool purrr rapport raster Rcpp reactlog readr \
-  reticulate rfishbase rhandsontable ritis rmarkdown RPostgres scales sf shiny shinyBS \
+  reticulate rfishbase rhandsontable ritis rmarkdown rpostgis RPostgres scales sf shiny shinyBS \
   shinycssloaders shinydashboard shinyjs shinyWidgets showtext shinythemes sjPlot skimr sp \
   stringr terra tibble tidymodels tidyr tidyverse units urltools viridis webshot2 yaml \
  && rm -rf /tmp/downloaded_packages
