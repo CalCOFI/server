@@ -36,4 +36,7 @@ COPY users.csv    /tmp/users.csv
 COPY add_users.sh /tmp/add_users.sh
 RUN chmod +x /tmp/add_users.sh && PASSWORD=$PASSWORD && /tmp/add_users.sh
 
+# enforce permissions
+RUN chgrp -R staff /share/github && chmod -R g+w /share/github
+
 CMD ["/init"]
