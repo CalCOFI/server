@@ -24,6 +24,10 @@ shiny.calcofi.io {
   reverse_proxy rstudio:3838
 }
 
+app.calcofi.io {
+  reverse_proxy rstudio:3838
+}
+
 swagger.calcofi.io {
   reverse_proxy pg_swagger:8080
 }
