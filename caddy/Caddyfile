@@ -35,3 +35,7 @@ swagger.calcofi.io {
 tile.calcofi.io {
   reverse_proxy pg_tileserv:7800
 }
+
+erddap.calcofi.io {
+  reverse_proxy erddap:8080
+}

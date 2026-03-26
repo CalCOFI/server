@@ -154,10 +154,35 @@ services:
     container_name: pg_swagger
     image: swaggerapi/swagger-ui
     depends_on:
-      - pg_rest    
+      - pg_rest
     ports:
       - "8080:8080"
     expose:
       - "8080"
     environment:
       API_URL: https://rest.calcofi.io/
+
+  erddap:
+    container_name: erddap
+    image: erddap/erddap:latest
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    volumes:
+      - /share/github/CalCOFI/erddap/content:/usr/local/tomcat/content/erddap
+      - /share/erddap/data:/erddapData
+      - /share/erddap/datasets:/datasets
+    environment:
+      ERDDAP_MEMORY: 4g
+      ERDDAP_baseUrl: http://localhost:8090
+      ERDDAP_baseHttpsUrl: https://erddap.calcofi.io
+      ERDDAP_bigParentDirectory: /erddapData/
+      ERDDAP_adminInstitution: CalCOFI
+      ERDDAP_adminInstitutionUrl: https://calcofi.io
+      ERDDAP_adminIndividualName: CalCOFI Data Manager
+      ERDDAP_adminPosition: Data Manager
+      ERDDAP_adminCity: La Jolla
+      ERDDAP_adminStateOrProvince: CA
+      ERDDAP_adminPostalCode: "92037"
+      ERDDAP_adminCountry: USA
+      ERDDAP_adminEmail: calcofi@ucsd.edu
