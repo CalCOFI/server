@@ -186,3 +186,33 @@ services:
       ERDDAP_adminPostalCode: "92037"
       ERDDAP_adminCountry: USA
       ERDDAP_adminEmail: calcofi@ucsd.edu
+
+  h3t_api:
+    container_name: h3t_api
+    build: /share/github/CalCOFI/api-h3t
+    restart: unless-stopped
+    environment:
+      DUCKDB_PATH: /data/calcofi_latest.duckdb
+      H3T_PORT: 8889
+      H3T_HOST: 0.0.0.0
+      RETICULATE_PYTHON: /opt/venv/bin/python3
+    volumes:
+      # mount the released DuckDB files read-only. calcofi_latest.duckdb
+      # should be a symlink to the current versioned release
+      # (e.g. calcofi_v2026.04.08.duckdb).
+      - /share/github/int-app/data:/data:ro
+    expose:
+      - "8889"
+
+  varnish:
+    container_name: varnish
+    image: varnish:7
+    restart: unless-stopped
+    environment:
+      VARNISH_SIZE: 1G
+    volumes:
+      - ./varnish/default.vcl:/etc/varnish/default.vcl:ro
+    expose:
+      - "80"
+    depends_on:
+      - h3t_api

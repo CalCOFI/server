@@ -39,3 +39,7 @@ tile.calcofi.io {
 erddap.calcofi.io {
   reverse_proxy erddap:8080
 }
+
+h3t.calcofi.io {
+  reverse_proxy varnish:80
+}
