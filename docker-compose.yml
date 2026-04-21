@@ -215,4 +215,7 @@ services:
     expose:
       - "80"
     depends_on:
-      - h3t_api
+      # Varnish compiles its VCL at startup, which resolves the backend
+      # hostname via DNS. If h3t_api isn't running yet, compile fails.
+      h3t_api:
+        condition: service_healthy
