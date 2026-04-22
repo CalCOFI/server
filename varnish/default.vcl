@@ -35,6 +35,12 @@ sub vcl_recv {
     if (req.method != "GET" && req.method != "HEAD") { return (pass); }
     if (req.url !~ "^/h3t/") { return (pass); }
 
+    # caddy gzips at the edge and the plumber backend never compresses, so
+    # the cached object is always a single uncompressed variant. strip
+    # Accept-Encoding before the hash lookup so a stray header from the
+    # upstream edge can't fragment the cache into per-encoding copies.
+    unset req.http.Accept-Encoding;
+
     # healthcheck + meta: cache briefly, not worth a cache object
     if (req.url ~ "^/h3t/health$" || req.url ~ "^/h3t/meta$") {
         return (pass);
