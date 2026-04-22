@@ -41,5 +41,6 @@ erddap.calcofi.io {
 }
 
 h3t.calcofi.io {
-  reverse_proxy varnish:80
+	encode zstd gzip
+	reverse_proxy varnish:80
 }
