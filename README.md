@@ -1,44 +1,43 @@
 # server
 calcofi.io server setup for R Shiny apps, RStudio IDE, R Plumber API, temporary PostGIS database, pg_tileserv
 
-## TODO
+## Restore database from `.sql.gz` backup
 
-- [ ] update `pg_restore` instructions
+The `pg_backups` container produces gzipped plain-SQL dumps (`.sql.gz`), not
+custom-format `.dump` files. Use `gunzip | psql` to restore — **not**
+`pg_restore`. The superuser role is `admin`, not `postgres`.
 
 ```bash
-# from host server log into postgis container
+# Enter the postgis container as root (no need to su)
 docker exec -it postgis bash
 
-# switch to user postgres
-su - postgres
+# Terminate active connections so the database can be dropped
+psql -U admin -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'gis' AND pid <> pg_backend_pid();"
 
-# drop database
-dropdb gis
-createdb -U postgres gis
-
-# change dir to folder of backups
-cd /share/db_backup; ls
-
-# restore given date; [c]lean and [C]reate
-dropdb -U admin -f gis
+# Drop and recreate
+dropdb -U admin gis
 createdb -U admin gis
 
-PASSWORD=$(cat /share/.calcofi_db_pass.txt)
+# Pre-create roles the dump expects (avoids errors during restore)
+psql -U admin -d postgres -c "CREATE ROLE root WITH SUPERUSER LOGIN;"
+psql -U admin -d postgres -c "CREATE ROLE mfrants WITH SUPERUSER LOGIN;"
 
-createuser -U admin -s -i -d -r -l -w root
-psql -U admin -d postgres -c "ALTER ROLE root WITH PASSWORD '$PASSWORD';"
-
-createuser -U admin -s -i -d -r -l -w mfrants
-psql -U admin -d postgres -c "ALTER ROLE root WITH PASSWORD '$PASSWORD';"
-
-PASSWORD=$(cat /share/.calcofi_db_pass.txt)
-
-vi .env
-PASSWORD=s@Cr3t!
-ROPASS=s@Cr3t!2
-
-pg_restore -U admin -d gis gis_2024-10-18.dump
+# Restore from the gzipped SQL dump (adjust filename/path as needed)
+gunzip -c /share/pg_backups/weekly/gis-202616.sql.gz | psql -U admin -d gis
 ```
+
+To preview all roles the dump expects before restoring:
+
+```bash
+gunzip -c /share/pg_backups/weekly/gis-202616.sql.gz | grep "^CREATE ROLE\|^ALTER ROLE" | head -40
+```
+
+### Notes
+
+- The superuser role is `admin` — `postgres` role does not exist in this setup.
+- Backups live in `/share/pg_backups/{daily,weekly,monthly}/`.
+- `ERROR: role "X" does not exist` during restore means that role needs to be
+  created with `psql -U admin -d postgres -c "CREATE ROLE X WITH SUPERUSER LOGIN;"` before restoring.
 
 ```sql
 CREATE USER ro_user WITH PASSWORD 'pa$$word';
