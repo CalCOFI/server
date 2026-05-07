@@ -21,6 +21,7 @@ createdb -U admin gis
 # Pre-create roles the dump expects (avoids errors during restore)
 psql -U admin -d postgres -c "CREATE ROLE root WITH SUPERUSER LOGIN;"
 psql -U admin -d postgres -c "CREATE ROLE mfrants WITH SUPERUSER LOGIN;"
+psql -U admin -d postgres -c "CREATE ROLE ro_user WITH LOGIN PASSWORD 'your_ro_password';"
 
 # Restore from the gzipped SQL dump (adjust filename/path as needed)
 gunzip -c /share/pg_backups/weekly/gis-202616.sql.gz | psql -U admin -d gis
@@ -40,7 +41,7 @@ gunzip -c /share/pg_backups/weekly/gis-202616.sql.gz | grep "^CREATE ROLE\|^ALTE
   created with `psql -U admin -d postgres -c "CREATE ROLE X WITH SUPERUSER LOGIN;"` before restoring.
 
 ```sql
-CREATE USER ro_user WITH PASSWORD 'pa$$word';
+CREATE USER ro_user WITH PASSWORD 'your_ro_password';
 GRANT CONNECT ON DATABASE gis TO ro_user;
 GRANT USAGE ON SCHEMA public TO ro_user;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO ro_user;
