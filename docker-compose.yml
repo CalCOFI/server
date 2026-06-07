@@ -165,16 +165,56 @@ services:
     environment:
       API_URL: https://rest.calcofi.io/
 
+  # Self-heal guard for ERDDAP config. ERDDAP's content dir is a bind-mount of
+  # the CalCOFI/erddap repo (cloned to /share/github/CalCOFI/erddap). If that
+  # clone is absent, Docker silently auto-creates an EMPTY mount dir, ERDDAP
+  # boots with no setup.xml, and every request to /erddap returns "404 Not
+  # Found" with no obvious cause. This one-shot container detects the missing
+  # config and clones it into the content dir, so a fresh host self-heals and
+  # the failure is loud in the logs instead of a silent 404.
+  erddap_init:
+    container_name: erddap_init
+    image: alpine/git:latest
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        if [ -f /content/setup.xml ]; then
+          echo "[erddap_init] content/setup.xml present - OK";
+        else
+          echo "[erddap_init] content/setup.xml MISSING - cloning CalCOFI/erddap config...";
+          git clone --depth 1 https://github.com/CalCOFI/erddap.git /tmp/cfg \
+            && cp -a /tmp/cfg/content/. /content/ \
+            && echo "[erddap_init] seeded content from CalCOFI/erddap" \
+            || { echo "[erddap_init] FAILED to seed ERDDAP content"; exit 1; };
+        fi
+    volumes:
+      - /share/github/CalCOFI/erddap/content:/content
+    restart: "no"
+
   erddap:
     container_name: erddap
     image: erddap/erddap:latest
     restart: unless-stopped
+    depends_on:
+      erddap_init:
+        condition: service_completed_successfully
     ports:
       - "8090:8080"
     volumes:
       - /share/github/CalCOFI/erddap/content:/usr/local/tomcat/content/erddap
       - /share/erddap/data:/erddapData
       - /share/erddap/datasets:/datasets
+      # CalCOFI branding. The webapp dir is baked into the image (not persistent):
+      #  - logo served at /erddap/images/calcofi.svg (referenced by startBodyHtml5)
+      #  - messages.xml overrides only <startBodyHtml5> for the CalCOFI header.
+      # NOTE: a content/erddap/messages.xml does NOT work in ERDDAP 2.30.0 (it
+      # replaces the default base and is parsed with stricter flags), so the
+      # edited file is mounted over the classpath messages.xml instead. It is a
+      # full copy of the image default with only startBodyHtml5 changed; re-derive
+      # it from the new default on ERDDAP upgrade.
+      - /share/github/CalCOFI/erddap/content/images/calcofi.svg:/usr/local/tomcat/webapps/erddap/images/calcofi.svg:ro
+      - /share/github/CalCOFI/erddap/messages.xml:/usr/local/tomcat/webapps/erddap/WEB-INF/classes/gov/noaa/pfel/erddap/util/messages.xml:ro
     environment:
       ERDDAP_MEMORY: 4g
       ERDDAP_baseUrl: http://localhost:8090

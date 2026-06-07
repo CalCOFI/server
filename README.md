@@ -1,6 +1,45 @@
 # server
 calcofi.io server setup for R Shiny apps, RStudio IDE, R Plumber API, temporary PostGIS database, pg_tileserv
 
+## ERDDAP
+
+The `erddap` service (https://erddap.calcofi.io) bind-mounts its config from the
+[`CalCOFI/erddap`](https://github.com/CalCOFI/erddap) repo, which **must be cloned
+on the host** at the path referenced in `docker-compose.yml`:
+
+```bash
+git clone https://github.com/CalCOFI/erddap.git /share/github/CalCOFI/erddap
+```
+
+That repo provides `content/setup.xml` and `content/datasets.xml`. Site-specific
+values (`baseUrl`, `baseHttpsUrl`, `admin*`, ...) are overridden at runtime by the
+`ERDDAP_*` environment variables in this repo's `docker-compose.yml`.
+
+**Gotcha:** if that clone is missing, Docker silently auto-creates an *empty* mount
+directory, ERDDAP starts with no `setup.xml`, and every request to `/erddap`
+returns `HTTP Status 404 – Not Found` with no obvious cause. The `erddap_init`
+one-shot service in `docker-compose.yml` self-heals this by cloning the config if
+`content/setup.xml` is absent (and `erddap` `depends_on` it completing). Note that
+`setup.xml` must be the *complete* ERDDAP default — a minimal file is rejected at
+startup because ERDDAP requires `categoryAttributes`, `admin*`, `accessConstraints`,
+`fees`, `keywords`, `flagKeyKey`, and the logo-file settings to be present.
+
+### CalCOFI header / logo
+
+The page header (CalCOFI logo + "CalCOFI ERDDAP", replacing the default NOAA
+header) comes from ERDDAP's `messages.xml` `<startBodyHtml5>`. Two `docker-compose.yml`
+bind-mounts into the (otherwise ephemeral) webapp dir provide it:
+
+- `content/images/calcofi.svg` → served at `/erddap/images/calcofi.svg`
+- `messages.xml` → mounted over the classpath `.../util/messages.xml`
+
+`messages.xml` is a **full copy of the image's default** with only `<startBodyHtml5>`
+changed. A `content/erddap/messages.xml` does *not* work in ERDDAP 2.30.0 (it
+replaces the default base entirely and is parsed with stricter flags, failing on
+`acceptEncodingHtml`), which is why it's mounted over the classpath file instead.
+On an ERDDAP image upgrade, re-derive `messages.xml` from the new default and
+re-apply the `startBodyHtml5` block.
+
 ## Restore database from `.sql.gz` backup
 
 The `pg_backups` container produces gzipped plain-SQL dumps (`.sql.gz`), not
