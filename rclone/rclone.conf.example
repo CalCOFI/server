@@ -1,0 +1,23 @@
+# Example remotes for the GDrive -> GCS sync (gdrive_to_gcs.sh).
+#
+# Add these blocks to the host's live rclone config at
+#   /share/rclone/rclone.conf
+# alongside the existing [remote] used by backup.sh. Do NOT commit the live
+# config or the SA key.
+#
+# The calcofi-admin service-account key is mounted read-only into the container
+# at /config/rclone/calcofi-admin-sa.json (see docker-compose.yml). The Drive
+# folder must be shared with calcofi-admin@ucsd-sio-calcofi.iam.gserviceaccount.com
+# (Content Manager). No Workspace domain-wide delegation is required.
+
+[gdrive-calcofi]
+type = drive
+scope = drive
+service_account_file = /config/rclone/calcofi-admin-sa.json
+root_folder_id = 1KYo8-WiWpdYcvHU8CBPvPhJdJdOym0oW
+
+[gcs-calcofi-sa]
+type = google cloud storage
+project_number = ucsd-sio-calcofi
+service_account_file = /config/rclone/calcofi-admin-sa.json
+bucket_policy_only = true

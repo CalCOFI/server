@@ -1,1 +1,4 @@
 30 0 * * * /backup.sh >> /share/logs/rclone 2>&1
+0 2 * * * /gdrive_to_gcs.sh public >> /share/logs/gdrive_to_gcs 2>&1
+# enable once data-private/ is populated:
+# 15 2 * * * /gdrive_to_gcs.sh private >> /share/logs/gdrive_to_gcs 2>&1

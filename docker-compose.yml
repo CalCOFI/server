@@ -93,6 +93,9 @@ services:
     volumes:
       - /share/rclone:/config/rclone
       - /share:/share
+      # calcofi-admin SA key for the gdrive->gcs sync (must exist on host first;
+      # create with rclone/setup_service_account.sh, then scp to the VM)
+      - /etc/rclone/calcofi-admin-sa.json:/config/rclone/calcofi-admin-sa.json:ro
 
   pgadmin:
     container_name: pgadmin
