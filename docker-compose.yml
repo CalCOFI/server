@@ -219,6 +219,10 @@ services:
       ERDDAP_MEMORY: 4g
       ERDDAP_baseUrl: http://localhost:8090
       ERDDAP_baseHttpsUrl: https://erddap.calcofi.io
+      # Stable flagKeyKey (secret, from .env). Without it the entrypoint
+      # generates a new random value on every restart, invalidating dataset
+      # reload flag URLs and email-subscription keys.
+      ERDDAP_flagKeyKey: ${ERDDAP_flagKeyKey}
       ERDDAP_bigParentDirectory: /erddapData/
       ERDDAP_adminInstitution: CalCOFI
       ERDDAP_adminInstitutionUrl: https://calcofi.io
