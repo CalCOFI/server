@@ -33,8 +33,12 @@ restart.
 ## One-time setup (on your laptop)
 
 ```bash
-# 1. create the SA key + grant Storage Object Admin on the buckets
-./setup_service_account.sh --apply        # key → ~/.config/gcloud/calcofi-admin-sa.json
+# 1. SA key + grant Storage Object Admin on the buckets.
+#    already created a key (e.g. in the Cloud Console)? point the script at it —
+#    step [1] then SKIPS creation, step [2] still grants bucket IAM:
+#      export CALCOFI_SA_KEY="/path/to/<project>_<id>_calcofi-admin-sa.json"
+#    otherwise it creates one at ~/.config/gcloud/calcofi-admin-sa.json
+./setup_service_account.sh --apply
 
 # 2. share the Drive folder with the SA (Drive UI → Share, Content Manager):
 #    calcofi-admin@ucsd-sio-calcofi.iam.gserviceaccount.com
@@ -48,8 +52,9 @@ restart.
 ## Deploy on the server (`shiny-server`)
 
 ```bash
-# A. put the SA key on the host BEFORE compose up (else Docker makes an empty dir)
-gcloud compute scp ~/.config/gcloud/calcofi-admin-sa.json \
+# A. put the SA key on the host BEFORE compose up (else Docker makes an empty dir).
+#    use your key path (the on-VM filename stays calcofi-admin-sa.json regardless):
+gcloud compute scp "${CALCOFI_SA_KEY:-$HOME/.config/gcloud/calcofi-admin-sa.json}" \
   shiny-server:/tmp/sa.json --zone us-central1-a --project ucsd-sio-calcofi
 # on the VM:
 sudo install -m600 -D /tmp/sa.json /etc/rclone/calcofi-admin-sa.json && rm -f /tmp/sa.json
@@ -79,6 +84,9 @@ The volume mount `/etc/rclone/calcofi-admin-sa.json:/config/rclone/calcofi-admin
 
 - `rclone.conf` and the SA key are **never** committed (kept on the host under
   `/share/rclone/` and `/etc/rclone/`).
+- The SA key is a long-lived credential to **GCS *and* Drive** — keep it out of
+  cloud-synced storage (prefer local `~/.config/gcloud/`, `chmod 600`) and rotate
+  it periodically (`gcloud iam service-accounts keys list/delete`).
 - `data-private/` is empty for now; its crontab line is commented out — enable it
   once the private bucket source exists.
 - The CTD ingest auto-sources its zips from
