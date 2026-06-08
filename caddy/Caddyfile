@@ -12,10 +12,6 @@ pgadmin.calcofi.io {
 	reverse_proxy pgadmin:8088
 }
 
-rest.calcofi.io {
-  reverse_proxy pg_rest:3000
-}
-
 rstudio.calcofi.io {
   reverse_proxy rstudio:8787
 }
@@ -26,10 +22,6 @@ shiny.calcofi.io {
 
 app.calcofi.io {
   reverse_proxy rstudio:3838
-}
-
-swagger.calcofi.io {
-  reverse_proxy pg_swagger:8080
 }
 
 tile.calcofi.io {

@@ -134,37 +134,13 @@ services:
     build:
       context: ./pg_tileserv
       dockerfile: Dockerfile.alpine
-      args: 
+      args:
         VERSION: latest
+    restart: unless-stopped
     depends_on:
       - postgis
     ports:
       - 7800:7800
-
-  pg_rest:
-    container_name: pg_rest
-    environment:
-      PGRST_DB_URI: postgres://ro_user:$ROPASS@postgis:5432/gis
-      # {"code":"PGRST000","details":"could not translate host name \"lcof1@postgis\"
-      PGRST_OPENAPI_SERVER_PROXY_URI: http://127.0.0.1:3000
-      PGRST_DB_ANON_ROLE: ro_user  # db-anon-role
-    image: postgrest/postgrest
-    depends_on:
-      - postgis
-    ports:
-      - "3000:3000"
-
-  pg_swagger:
-    container_name: pg_swagger
-    image: swaggerapi/swagger-ui
-    depends_on:
-      - pg_rest
-    ports:
-      - "8080:8080"
-    expose:
-      - "8080"
-    environment:
-      API_URL: https://rest.calcofi.io/
 
   # Self-heal guard for ERDDAP config. ERDDAP's content dir is a bind-mount of
   # the CalCOFI/erddap repo (cloned to /share/github/CalCOFI/erddap). If that
