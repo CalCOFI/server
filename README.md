@@ -948,6 +948,14 @@ cd /srv/shiny-server
 sudo ln -s /share/github/apps/oceano oceano
 sudo ln -s /share/github/apps/dashboard dashboard
 sudo ln -s /share/github/capstone/scripts/shiny capstone
+
+# data-backed apps: build their local DuckDB with prep_db.R BEFORE symlinking
+# (they read release/ingest parquet from public GCS over HTTPS — no creds).
+# re-run `Rscript prep_db.R TRUE` after each release_database.qmd to refresh.
+( cd /share/github/apps/ctd-viz   && Rscript prep_db.R )   # -> /share/data/ctd-viz/
+( cd /share/github/apps/datacheck && Rscript prep_db.R )   # -> /share/data/datacheck/
+sudo ln -s /share/github/apps/ctd-viz   ctd-viz
+sudo ln -s /share/github/apps/datacheck datacheck
 ```
 
 ### turn on tile.calcofi.io
