@@ -115,7 +115,7 @@ fi
 # plus the non-download files in ctd-cast/ (README, etc. — .accdb excluded).
 
 log "[1/3] copying all data-public EXCEPT ${CTD_DL_REL}/ and *.accdb ..."
-rclone copy "${SRC_LOCAL}" "${DEST_REMOTE}:${DEST_SUBPATH}" "${DRY[@]}" "${COMMON_OPTS[@]}" "${EXCLUDES[@]}" \
+rclone copy "${SRC_LOCAL}" "${DEST_REMOTE}:${DEST_SUBPATH}" ${DRY[@]+"${DRY[@]}"} "${COMMON_OPTS[@]}" "${EXCLUDES[@]}" \
   --exclude "${CTD_DL_REL}/**" \
   --exclude "calcofi/ctd-cast/*.accdb"
 
@@ -125,7 +125,7 @@ rclone copy "${SRC_LOCAL}" "${DEST_REMOTE}:${DEST_SUBPATH}" "${DRY[@]}" "${COMMO
 
 log "[2/3] copying CTD source zips (top-level *.zip in ${CTD_DL_REL}/) ..."
 rclone copy "${SRC_LOCAL}/${CTD_DL_REL}" \
-  "${DEST_REMOTE}:${DEST_SUBPATH}/${CTD_DL_REL}" "${DRY[@]}" "${COMMON_OPTS[@]}" \
+  "${DEST_REMOTE}:${DEST_SUBPATH}/${CTD_DL_REL}" ${DRY[@]+"${DRY[@]}"} "${COMMON_OPTS[@]}" \
   --max-depth 1 --filter "+ /*.zip" --filter "- *"
 
 # ─── 3) create empty data-private/ shell (private data handled separately) ─────
