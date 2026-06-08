@@ -24,6 +24,14 @@ DRIVE_FOLDER_ID="1KYo8-WiWpdYcvHU8CBPvPhJdJdOym0oW"   # "CalCOFI Data Folder"
 
 # where to store the SA key (chmod 600). On a Linux server prefer /etc/rclone/.
 KEY_FILE="${CALCOFI_SA_KEY:-${HOME}/.config/gcloud/calcofi-admin-sa.json}"
+# expand a leading ~ (a quoted "~/..." is NOT expanded by the shell) and require
+# an absolute path — otherwise a relative/tilde value makes mkdir + keys create
+# write a stray "~/..." dir and MINT A NEW KEY under the current directory.
+case "${KEY_FILE}" in "~/"*) KEY_FILE="${HOME}/${KEY_FILE#\~/}" ;; esac
+case "${KEY_FILE}" in
+  /*) : ;;
+  *) echo "ERROR: CALCOFI_SA_KEY must be an absolute path (got: ${KEY_FILE})"; exit 1 ;;
+esac
 
 # rclone remotes this script will create (SA-based, for server automation)
 GDRIVE_SA_REMOTE="gdrive-calcofi"     # Drive, scoped to the Shared Drive folder
@@ -57,10 +65,11 @@ fi
 # ─── 1) create + download a JSON key ──────────────────────────────────────────
 echo
 echo "[1] create JSON key → ${KEY_FILE}"
-if $APPLY && [ -f "${KEY_FILE}" ]; then
-  echo "  key already exists, skipping create (delete it first to rotate)"
+if [ -f "${KEY_FILE}" ]; then
+  echo "  key already exists at ${KEY_FILE} — skipping create (delete it to rotate)"
 else
-  mkdir -p "$(dirname "${KEY_FILE}")"
+  echo "  will create a NEW key at ${KEY_FILE}"
+  if $APPLY; then mkdir -p "$(dirname "${KEY_FILE}")"; fi
   run gcloud iam service-accounts keys create "${KEY_FILE}" \
     --iam-account "${SA_EMAIL}" --project "${PROJECT}"
   if $APPLY; then chmod 600 "${KEY_FILE}"; fi
