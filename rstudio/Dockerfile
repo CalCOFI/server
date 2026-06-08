@@ -11,6 +11,7 @@ RUN /rocker_scripts/install_python.sh
 # https://github.com/CalCOFI/SaferSeafood/blob/main/shinydashboard/global.R
 RUN install2.r --error \
   brms bslib caret corrplot DBI dbplyr DiagrammeR digest dplyr DT extrafont \
+  bsicons conductor data.tree duckdb geosphere highcharter litedown MBA shinyjqui thematic \
   firebase flexdashboard fs geojsonio geos glue gt here htmltools htmlwidgets httpuv httr2 jsonlite \
   kableExtra leaflet leaflet.extras librarian listviewer lubridate mapedit \
   mapview markdown plumber plotly png pool purrr rapport raster Rcpp reactlog readr \
@@ -19,12 +20,16 @@ RUN install2.r --error \
   stringr terra tibble tidymodels tidyr tidyverse units urltools viridis webshot2 yaml \
  && rm -rf /tmp/downloaded_packages
 
-# install R packages on Github 
+# install R packages on Github
+#   bbest/mapgl@feat/add-h3t-source: int-app sets H3T_USE=TRUE and needs the
+#   h3t tile source from this fork branch (PR #199); also a superset of CRAN
+#   mapgl, so it covers datacheck + ctd-viz too.
 RUN installGithub.r \
   CalCOFI/calcofi4r \
   oceanmetrics/leaftiles \
   dreamRs/shinyWidgets \
   dreamRs/shinytreeview \
+  bbest/mapgl@feat/add-h3t-source \
   && rm -rf /tmp/downloaded_packages
   
 ARG PASSWORD
