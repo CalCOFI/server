@@ -36,9 +36,10 @@ services:
       - 3838:3838
     restart: unless-stopped
     volumes:
-      - /share:/share    
+      - /share:/share
       - shiny_apps:/srv/shiny-server
-      
+      - /home/bebest/.ssh:/home/bebest/.ssh   # persistent git/SSH identity for bebest (uid 1003 matches host)
+
   postgis:
     container_name: postgis
     image: postgis/postgis:17-3.5
