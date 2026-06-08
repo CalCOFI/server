@@ -2,9 +2,12 @@ vcl 4.1;
 
 import std;
 
-# backend: the h3t plumber service in the shared docker network
+# backend: the h3t FastAPI service (CalCOFI/api-h3t-py) in the shared docker
+# network. Cut over from the R Plumber service (h3t_api) - same wire protocol.
+# Roll back: set .host = "h3t_api" + reload (R container kept ~1 week).
+# See api-h3t-py/deploy.md.
 backend default {
-    .host = "h3t_api";
+    .host = "h3t_api_py";
     .port = "8889";
     .connect_timeout = 5s;
     .first_byte_timeout = 10s;

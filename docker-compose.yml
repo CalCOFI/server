@@ -234,20 +234,26 @@ services:
       ERDDAP_adminCountry: USA
       ERDDAP_adminEmail: calcofi@ucsd.edu
 
-  h3t_api:
-    container_name: h3t_api
-    build: /share/github/CalCOFI/api-h3t
+  # FastAPI port of api-h3t (CalCOFI/api-h3t-py) serving h3t.calcofi.io behind
+  # Varnish (varnish/default.vcl backend). Replaced the R Plumber service
+  # (h3t_api), decommissioned after cutover. Same wire protocol.
+  # See api-h3t-py/deploy.md for the cutover/rollback history.
+  h3t_api_py:
+    container_name: h3t_api_py
+    build: /share/github/CalCOFI/api-h3t-py
     restart: unless-stopped
     environment:
+      # legacy single-DB mode → registers as db name "default".
       DUCKDB_PATH: /data/calcofi_latest.duckdb
       H3T_PORT: 8889
       H3T_HOST: 0.0.0.0
-      RETICULATE_PYTHON: /opt/venv/bin/python3
+      # Varnish strips Accept-Encoding before the cache lookup and Caddy gzips
+      # at the edge, so the backend always serves plain JSON.
+      H3T_APP_GZIP: "false"
     volumes:
       # mount the released DuckDB files read-only. calcofi_latest.duckdb
-      # should be a symlink to the current versioned release
-      # (e.g. calcofi_v2026.04.08.duckdb).
-      - /share/github/int-app/data:/data:ro
+      # is a symlink to the current versioned release.
+      - /share/github/CalCOFI/int-app/data:/data:ro
     expose:
       - "8889"
 
@@ -263,6 +269,6 @@ services:
       - "80"
     depends_on:
       # Varnish compiles its VCL at startup, which resolves the backend
-      # hostname via DNS. If h3t_api isn't running yet, compile fails.
-      h3t_api:
+      # hostname via DNS. If the backend isn't running yet, compile fails.
+      h3t_api_py:
         condition: service_healthy
