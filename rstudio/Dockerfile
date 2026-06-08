@@ -9,9 +9,13 @@ RUN /rocker_scripts/install_python.sh
 #   https://github.com/CalCOFI/apps/blob/main/oceano/global.R
 # https://github.com/CalCOFI/api/blob/main/plumber.R
 # https://github.com/CalCOFI/SaferSeafood/blob/main/shinydashboard/global.R
+# knitr + xfun are listed explicitly so they install at latest in lock-step:
+#   xfun renamed attr()->attr2(), and a stale transitive knitr that still did
+#   importFrom(xfun, attr) broke skimr/SaferSeafood (uptime #1, 2026-06-08).
 RUN install2.r --error \
   brms bslib caret corrplot DBI dbplyr DiagrammeR digest dplyr DT extrafont \
   bsicons conductor data.tree duckdb geosphere highcharter litedown MBA shinyjqui thematic \
+  knitr xfun \
   firebase flexdashboard fs geojsonio geos glue gt here htmltools htmlwidgets httpuv httr2 jsonlite \
   kableExtra leaflet leaflet.extras librarian listviewer lubridate mapedit \
   mapview markdown plumber plotly png pool purrr rapport raster Rcpp reactlog readr \
@@ -30,6 +34,7 @@ RUN installGithub.r \
   dreamRs/shinyWidgets \
   dreamRs/shinytreeview \
   bbest/mapgl@feat/add-h3t-source \
+  qfes/rdeck \
   && rm -rf /tmp/downloaded_packages
   
 ARG PASSWORD
