@@ -47,10 +47,13 @@ rclone copyto "${TMP}" "${MANIFESTS}/manifest_${TS}.json"
 rclone copyto "${TMP}" "${MANIFESTS}/manifest_latest.json"
 rm -f "${TMP}"
 
-# drop the archive dir if this run changed nothing (kept lean)
-if rclone lsf "${ARCHIVE}" 2>/dev/null | grep -q .; then
-  echo "[$(date '+%F %T')] done — changes archived at archive/${TS}"
+# the archive holds only files that were OVERWRITTEN/DELETED this run (versioning);
+# new-file copies are reported by 'rclone sync -v' above. Report both clearly and
+# drop an empty archive dir to keep the bucket lean.
+n_arch=$(rclone lsf "${ARCHIVE}" --recursive 2>/dev/null | grep -c . || true)
+if [ "${n_arch:-0}" -gt 0 ]; then
+  echo "[$(date '+%F %T')] done — sync complete; ${n_arch} changed/deleted file(s) versioned to archive/${TS}"
 else
   rclone rmdir "${ARCHIVE}" 2>/dev/null || true
-  echo "[$(date '+%F %T')] done — no changes"
+  echo "[$(date '+%F %T')] done — sync complete; nothing overwritten/deleted (no versioning needed)"
 fi
