@@ -74,7 +74,11 @@ COPY users.csv    /tmp/users.csv
 COPY add_users.sh /tmp/add_users.sh
 RUN chmod +x /tmp/add_users.sh && PASSWORD=$PASSWORD && /tmp/add_users.sh
 
-# enforce permissions
-RUN chgrp -R staff /share/github && chmod -R g+w /share/github
+# enforce /share/github permissions at RUNTIME via s6 cont-init. /share is a
+# runtime bind mount (docker-compose: /share:/share): it is absent during build,
+# so a RUN step here fails ("cannot access '/share/github'") and would be masked
+# by the mount anyway. The cont-init script applies the perms on every start.
+COPY fix-share-perms.sh /etc/cont-init.d/01-fix-share-perms
+RUN chmod +x /etc/cont-init.d/01-fix-share-perms
 
 CMD ["/init"]
