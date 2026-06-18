@@ -32,11 +32,15 @@ echo "[$(date '+%F %T')] gdrive->gcs ${BUCKET_TYPE}: ${SRC} -> ${SYNC} (archive 
 
 # sync; overwritten/deleted files are moved into the timestamped archive dir
 # (immutable versioning), --checksum compares by hash not mtime/size.
+# ctd-cast is published as per-cast .zip bundles only — exclude any unpacked
+# per-cast subdirectory (asc-hdr/, csvs-plots/, …) so GCS mirrors zips, not their
+# expanded contents (the ctd ingest sources the zips, not loose files).
 rclone sync "${SRC}" "${SYNC}" \
   --checksum \
   --backup-dir "${ARCHIVE}" \
   --drive-export-formats csv \
   --exclude ".DS_Store" --exclude "*.tmp" --exclude "~*" \
+  --exclude "calcofi/ctd-cast/download/*/**" \
   --transfers 8 --checkers 16 --drive-chunk-size 64M \
   --stats 30s --stats-one-line -v
 
