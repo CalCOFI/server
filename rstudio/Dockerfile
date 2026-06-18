@@ -23,7 +23,7 @@ RUN install2.r --error \
   firebase flexdashboard fs geojsonio geos ggplot2 glue googleCloudStorageR gridExtra gt here htmltools htmlwidgets httpuv httr2 jsonlite \
   kableExtra leaflet leaflet.extras librarian listviewer lubridate mapedit \
   mapview markdown plumber plotly png pool purrr rapport raster RColorBrewer Rcpp reactlog readr \
-  reticulate rfishbase rhandsontable ritis rmarkdown rnaturalearth rnaturalearthhires rpostgis RPostgres scales sf shiny shinyBS \
+  reticulate rfishbase rhandsontable ritis rmarkdown rnaturalearth rpostgis RPostgres scales sf shiny shinyBS \
   shinycssloaders shinydashboard shinyjs shinyWidgets showtext shinythemes sjPlot skimr sp \
   stringr terra tibble tidymodels tidyr tidyverse units urltools viridis webshot2 yaml \
  && rm -rf /tmp/downloaded_packages
@@ -32,7 +32,10 @@ RUN install2.r --error \
 #   bbest/mapgl@feat/add-h3t-source: int-app sets H3T_USE=TRUE and needs the
 #   h3t tile source from this fork branch (PR #199); also a superset of CRAN
 #   mapgl, so it covers datacheck + ctd-viz too.
+# rnaturalearthhires is not on CRAN (only ropensci/r-universe + GitHub), so it
+#   must be installed from GitHub rather than via install2.r above.
 RUN installGithub.r \
+  ropensci/rnaturalearthhires \
   CalCOFI/calcofi4r \
   oceanmetrics/leaftiles \
   dreamRs/shinyWidgets \
