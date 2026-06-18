@@ -16,6 +16,10 @@ RUN /rocker_scripts/install_python.sh
 #   (preliminaryanalysis/dashboard/app.R required_pkgs); ggplot2 + RColorBrewer
 #   are listed explicitly there too (otherwise only pulled in transitively via
 #   tidyverse). webshot2 needs a headless Chrome, installed below.
+# rsconnect is in the marmam-app librarian::shelf() list (app.R); without it
+#   baked in, librarian tries to install it at app-launch as the shiny runtime
+#   user, which can't write to the R library -> "unable to install packages"
+#   and the app fails to start.
 RUN install2.r --error \
   brms bslib caret corrplot DBI dbplyr DiagrammeR digest dplyr DT extrafont \
   bsicons conductor data.tree duckdb geosphere highcharter litedown MBA shinyjqui thematic \
@@ -23,7 +27,7 @@ RUN install2.r --error \
   firebase flexdashboard fs geojsonio geos ggplot2 glue googleCloudStorageR gridExtra gt here htmltools htmlwidgets httpuv httr2 jsonlite \
   kableExtra leaflet leaflet.extras librarian listviewer lubridate mapedit \
   mapview markdown plumber plotly png pool purrr rapport raster RColorBrewer Rcpp reactlog readr \
-  reticulate rfishbase rhandsontable ritis rmarkdown rnaturalearth rpostgis RPostgres scales sf shiny shinyBS \
+  reticulate rfishbase rhandsontable ritis rmarkdown rnaturalearth rpostgis RPostgres rsconnect scales sf shiny shinyBS \
   shinycssloaders shinydashboard shinyjs shinyWidgets showtext shinythemes sjPlot skimr sp \
   stringr terra tibble tidymodels tidyr tidyverse units urltools viridis webshot2 yaml \
  && rm -rf /tmp/downloaded_packages
