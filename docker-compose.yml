@@ -171,7 +171,15 @@ services:
 
   erddap:
     container_name: erddap
-    image: erddap/erddap:latest
+    # Custom image = stock ERDDAP + DuckDB JDBC driver (./erddap/Dockerfile), so
+    # EDDTableFromDatabase can serve the CTD tables via DuckDB views over Parquet
+    # (streams filtered rows; the old ctd_wide EDDTableFromParquetFiles OOM'd).
+    # Roll back: revert to `image: erddap/erddap:latest` + drop the duckdb mounts.
+    build:
+      context: ./erddap
+      args:
+        DUCKDB_JDBC_VERSION: "1.5.2.1"
+    image: calcofi-erddap:duckdb
     restart: unless-stopped
     depends_on:
       erddap_init:
@@ -192,6 +200,11 @@ services:
       # it from the new default on ERDDAP upgrade.
       - /share/github/CalCOFI/erddap/content/images/calcofi.svg:/usr/local/tomcat/webapps/erddap/images/calcofi.svg:ro
       - /share/github/CalCOFI/erddap/messages.xml:/usr/local/tomcat/webapps/erddap/WEB-INF/classes/gov/noaa/pfel/erddap/util/messages.xml:ro
+      # DuckDB serving for calcofi_ctd_thin / calcofi_ctd_measurement. Paths are
+      # IDENTITY-mounted so the .db's read_parquet() views resolve in-container.
+      - /ssd/erddap-duckdb/datasets:/ssd/erddap-duckdb/datasets:ro
+      - /ssd/erddap-duckdb/duckdb:/ssd/erddap-duckdb/duckdb:ro
+      - /ssd/erddap-duckdb/tmp:/ssd/erddap-duckdb/tmp
     environment:
       ERDDAP_MEMORY: 4g
       ERDDAP_baseUrl: http://localhost:8090

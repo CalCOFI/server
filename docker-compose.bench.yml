@@ -1,0 +1,46 @@
+# Isolated bench ERDDAP for the CTD serving-backend benchmark
+# (DuckDB-JDBC vs Parquet vs CSV). Runs on port 8091 with the custom image
+# (./erddap = ERDDAP + DuckDB JDBC). Leaves the live `erddap` (8090) untouched.
+#
+#   docker compose -f docker-compose.bench.yml -p erddap-bench up -d
+#   BENCH_ERDDAP_MEMORY=1g docker compose -f docker-compose.bench.yml -p erddap-bench up -d   # heap sweep
+#
+# Paths under /ssd/erddap-bench are IDENTITY-mounted so the DuckDB view paths
+# (baked into calcofi_ctd.db at build time on the host) resolve the same inside
+# the container. See CalCOFI/workflows/bench_erddap_ctd.qmd.
+version: "3.7"
+services:
+  erddap_bench:
+    container_name: erddap_bench
+    image: calcofi-erddap:duckdb
+    build:
+      context: ./erddap
+      args:
+        DUCKDB_JDBC_VERSION: "1.5.2.1"
+    restart: "no"
+    ports:
+      - "8091:8080"
+    volumes:
+      - /ssd/erddap-bench/content:/usr/local/tomcat/content/erddap
+      - /ssd/erddap-bench/data:/erddapData
+      - /ssd/erddap-bench/datasets:/ssd/erddap-bench/datasets:ro
+      - /ssd/erddap-bench/staged:/ssd/erddap-bench/staged:ro
+      - /ssd/erddap-bench/duckdb:/ssd/erddap-bench/duckdb:ro
+      - /ssd/erddap-bench/tmp:/ssd/erddap-bench/tmp
+      - /share/github/CalCOFI/erddap/content/images/calcofi.svg:/usr/local/tomcat/webapps/erddap/images/calcofi.svg:ro
+      - /share/github/CalCOFI/erddap/messages.xml:/usr/local/tomcat/webapps/erddap/WEB-INF/classes/gov/noaa/pfel/erddap/util/messages.xml:ro
+    environment:
+      ERDDAP_MEMORY: ${BENCH_ERDDAP_MEMORY:-2g}
+      ERDDAP_baseUrl: http://localhost:8091
+      ERDDAP_baseHttpsUrl: http://localhost:8091
+      ERDDAP_flagKeyKey: benchflagkey
+      ERDDAP_bigParentDirectory: /erddapData/
+      ERDDAP_adminInstitution: CalCOFI (bench)
+      ERDDAP_adminInstitutionUrl: https://calcofi.io
+      ERDDAP_adminIndividualName: CalCOFI Data Manager
+      ERDDAP_adminPosition: Data Manager
+      ERDDAP_adminCity: La Jolla
+      ERDDAP_adminStateOrProvince: CA
+      ERDDAP_adminPostalCode: "92037"
+      ERDDAP_adminCountry: USA
+      ERDDAP_adminEmail: calcofi@ucsd.edu
