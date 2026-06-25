@@ -5,9 +5,12 @@
 #   docker compose -f docker-compose.bench.yml -p erddap-bench up -d
 #   BENCH_ERDDAP_MEMORY=1g docker compose -f docker-compose.bench.yml -p erddap-bench up -d   # heap sweep
 #
-# Paths under /ssd/erddap-bench are IDENTITY-mounted so the DuckDB view paths
-# (baked into calcofi_ctd.db at build time on the host) resolve the same inside
-# the container. See CalCOFI/workflows/bench_erddap_ctd.qmd.
+# The data tree lives under the shared /share mount (host /ssd/share/data), so the
+# DuckDB view paths (baked into calcofi_ctd.db) and the NetCDF fileDir resolve
+# identically where they're built (rstudio) and read (here). ERDDAP's own state
+# (content, /erddapData) is under /share/data/erddap-bench. The shared parquet /
+# .db / netcdf are read from /share/data/erddap-duckdb (same as prod erddap).
+# See CalCOFI/workflows/bench_erddap_ctd.qmd.
 version: "3.7"
 services:
   erddap_bench:
@@ -21,12 +24,13 @@ services:
     ports:
       - "8091:8080"
     volumes:
-      - /ssd/erddap-bench/content:/usr/local/tomcat/content/erddap
-      - /ssd/erddap-bench/data:/erddapData
-      - /ssd/erddap-bench/datasets:/ssd/erddap-bench/datasets:ro
-      - /ssd/erddap-bench/staged:/ssd/erddap-bench/staged:ro
-      - /ssd/erddap-bench/duckdb:/ssd/erddap-bench/duckdb:ro
-      - /ssd/erddap-bench/tmp:/ssd/erddap-bench/tmp
+      - /share/data/erddap-bench/content:/usr/local/tomcat/content/erddap
+      - /share/data/erddap-bench/data:/erddapData
+      - /share/data/erddap-bench/staged:/share/data/erddap-bench/staged:ro
+      - /share/data/erddap-duckdb/datasets:/share/data/erddap-duckdb/datasets:ro
+      - /share/data/erddap-duckdb/duckdb:/share/data/erddap-duckdb/duckdb:ro
+      - /share/data/erddap-duckdb/netcdf:/share/data/erddap-duckdb/netcdf:ro
+      - /share/data/erddap-duckdb/tmp:/share/data/erddap-duckdb/tmp
       - /share/github/CalCOFI/erddap/content/images/calcofi.svg:/usr/local/tomcat/webapps/erddap/images/calcofi.svg:ro
       - /share/github/CalCOFI/erddap/messages.xml:/usr/local/tomcat/webapps/erddap/WEB-INF/classes/gov/noaa/pfel/erddap/util/messages.xml:ro
     environment:

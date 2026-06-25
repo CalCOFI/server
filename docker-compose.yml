@@ -200,11 +200,13 @@ services:
       # it from the new default on ERDDAP upgrade.
       - /share/github/CalCOFI/erddap/content/images/calcofi.svg:/usr/local/tomcat/webapps/erddap/images/calcofi.svg:ro
       - /share/github/CalCOFI/erddap/messages.xml:/usr/local/tomcat/webapps/erddap/WEB-INF/classes/gov/noaa/pfel/erddap/util/messages.xml:ro
-      # DuckDB serving for calcofi_ctd_thin / calcofi_ctd_measurement. Paths are
-      # IDENTITY-mounted so the .db's read_parquet() views resolve in-container.
-      - /ssd/erddap-duckdb/datasets:/ssd/erddap-duckdb/datasets:ro
-      - /ssd/erddap-duckdb/duckdb:/ssd/erddap-duckdb/duckdb:ro
-      - /ssd/erddap-duckdb/tmp:/ssd/erddap-duckdb/tmp
+      # DuckDB serving for calcofi_ctd_thin / calcofi_ctd_measurement. The data
+      # tree lives under the shared /share mount (host /ssd/share/data), so the
+      # .db's read_parquet() view paths resolve identically where the .db is
+      # built (rstudio) and where ERDDAP reads it (here) — no /ssd identity hack.
+      - /share/data/erddap-duckdb/datasets:/share/data/erddap-duckdb/datasets:ro
+      - /share/data/erddap-duckdb/duckdb:/share/data/erddap-duckdb/duckdb:ro
+      - /share/data/erddap-duckdb/tmp:/share/data/erddap-duckdb/tmp
     environment:
       ERDDAP_MEMORY: 4g
       ERDDAP_baseUrl: http://localhost:8090
