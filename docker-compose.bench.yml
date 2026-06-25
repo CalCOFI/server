@@ -27,10 +27,9 @@ services:
       - /share/data/erddap-bench/content:/usr/local/tomcat/content/erddap
       - /share/data/erddap-bench/data:/erddapData
       - /share/data/erddap-bench/staged:/share/data/erddap-bench/staged:ro
-      - /share/data/erddap-duckdb/datasets:/share/data/erddap-duckdb/datasets:ro
-      - /share/data/erddap-duckdb/duckdb:/share/data/erddap-duckdb/duckdb:ro
-      - /share/data/erddap-duckdb/netcdf:/share/data/erddap-duckdb/netcdf:ro
-      - /share/data/erddap-duckdb/tmp:/share/data/erddap-duckdb/tmp
+      # whole shared data tree (datasets, duckdb, netcdf, parquet_wide, serving, tmp)
+      # at the identity path so every dataset block's fileDir/sourceUrl resolves
+      - /share/data/erddap-duckdb:/share/data/erddap-duckdb
       - /share/github/CalCOFI/erddap/content/images/calcofi.svg:/usr/local/tomcat/webapps/erddap/images/calcofi.svg:ro
       - /share/github/CalCOFI/erddap/messages.xml:/usr/local/tomcat/webapps/erddap/WEB-INF/classes/gov/noaa/pfel/erddap/util/messages.xml:ro
     environment:
