@@ -953,9 +953,11 @@ sudo ln -s /share/github/capstone/scripts/shiny capstone
 # (they read release/ingest parquet from public GCS over HTTPS — no creds).
 # re-run `Rscript prep_db.R TRUE` after each release_database.qmd to refresh.
 ( cd /share/github/apps/ctd-viz   && Rscript prep_db.R )   # -> /share/data/ctd-viz/
-( cd /share/github/apps/datacheck && Rscript prep_db.R )   # -> /share/data/datacheck/
+( cd /share/github/apps/db-viz-cruise && Rscript prep_db.R )   # -> /share/data/db-viz-cruise/
 sudo ln -s /share/github/apps/ctd-viz   ctd-viz
-sudo ln -s /share/github/apps/datacheck datacheck
+sudo ln -s /share/github/apps/db-viz-cruise db-viz-cruise
+# back-compat alias so the old https://app.calcofi.io/datacheck/ URL keeps working
+sudo ln -s /share/github/apps/db-viz-cruise datacheck
 ```
 
 ### turn on tile.calcofi.io

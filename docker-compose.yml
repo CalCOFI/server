@@ -245,7 +245,7 @@ services:
     volumes:
       # mount the released DuckDB files read-only. calcofi_latest.duckdb
       # is a symlink to the current versioned release.
-      - /share/github/CalCOFI/int-app/data:/data:ro
+      - /share/github/CalCOFI/db-viz-hex/data:/data:ro
     expose:
       - "8889"
 

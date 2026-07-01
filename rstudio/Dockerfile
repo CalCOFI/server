@@ -33,7 +33,7 @@ RUN install2.r --error \
  && rm -rf /tmp/downloaded_packages
 
 # install R packages on Github
-#   bbest/mapgl@feat/add-h3t-source: int-app sets H3T_USE=TRUE and needs the
+#   bbest/mapgl@feat/add-h3t-source: db-viz-hex sets H3T_USE=TRUE and needs the
 #   h3t tile source from this fork branch (PR #199); also a superset of CRAN
 #   mapgl, so it covers datacheck + ctd-viz too.
 # rnaturalearthhires is not on CRAN (only ropensci/r-universe + GitHub), so it
