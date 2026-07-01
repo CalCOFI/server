@@ -754,7 +754,7 @@ ls -la
 cd /share/github
 git clone https://github.com/CalCOFI/server.git
 
-cd /share/github/server
+cd /share/github/CalCOFI/server
 
 # set env variable for password
 echo 'PASSWORD=*secrethere*' > .env
@@ -900,9 +900,10 @@ ln -s /share/github         github
 ln -s /srv/shiny-server     shiny-apps
 ln -s /var/log/shiny-server shiny-logs
 
-# get Github repos
-cd /share/github
+# get Github repos (clones are nested under the org dir: /share/github/CalCOFI/<repo>)
 sudo chown -R admin /share
+mkdir -p /share/github/CalCOFI
+cd /share/github/CalCOFI
 git clone https://github.com/CalCOFI/api.git
 git clone https://github.com/CalCOFI/apps.git
 git clone https://github.com/CalCOFI/scripts.git
@@ -912,11 +913,11 @@ git clone https://github.com/CalCOFI/calcofi4r.git
 
 From [rstudio.calcofi.io](https://rstudio.calcofi.io)...
 
-Open `/share/github/apps/oceano/libs/db.R` and Source all followed by `dbListTables(con)` into Console to test database connection.
+Open `/share/github/CalCOFI/apps/oceano/libs/db.R` and Source all followed by `dbListTables(con)` into Console to test database connection.
 
 ### get api.calcofi.io up
 
-Get [api.calcofi.io](https://api.calcofi.io) up and running. From [rstudio.calcofi.io](https://rstudio.calcofi.io), File -> Open Project... `/share/github/api/api.Rproj`. Open `README.md`, and install `pm2` per instructions.
+Get [api.calcofi.io](https://api.calcofi.io) up and running. From [rstudio.calcofi.io](https://rstudio.calcofi.io), File -> Open Project... `/share/github/CalCOFI/api/api.Rproj`. Open `README.md`, and install `pm2` per instructions.
 
 ### setup git
 
@@ -927,10 +928,10 @@ git config --global user.name "Ben Best"
 
 ### get oceano app up
 
-Open `/share/github/apps/oceano/global.R` and run lines there similar to the following to install custom calcofi4r R package and any other missing R packages:
+Open `/share/github/CalCOFI/apps/oceano/global.R` and run lines there similar to the following to install custom calcofi4r R package and any other missing R packages:
 
 ```r
-devtools::install_local("/share/github/calcofi4r")
+devtools::install_local("/share/github/CalCOFI/calcofi4r")
 
 librarian::shelf(
   calcofi/calcofi4r,
@@ -938,26 +939,40 @@ librarian::shelf(
   raster, readr, sf, shiny)
 ```
 
-With `/share/github/apps/oceano/global.R` open in the Source pane, click the **Run App** button to test app.
+With `/share/github/CalCOFI/apps/oceano/global.R` open in the Source pane, click the **Run App** button to test app.
 
 ### turn on app links
 
+`/srv/shiny-server` is **not on the host** — it is the `shiny_apps` Docker named
+volume, mounted only into the `rstudio` container (see `docker-compose.yml`).
+`/share` is bind-mounted into that same container, so the symlink *targets*
+resolve there and R (for `prep_db.R`) is available. Run these **inside the
+container** — from the RStudio terminal at
+[rstudio.calcofi.io](https://rstudio.calcofi.io), or from the host with
+`docker exec -it rstudio bash` (which runs as root; prefix `sudo` only if the
+RStudio-terminal user lacks write on the volume). `ln -sfn` is idempotent, so
+re-running is safe.
+
 ```bash
-# turn on apps listed at https://calcofi.io
 cd /srv/shiny-server
-sudo ln -s /share/github/apps/oceano oceano
-sudo ln -s /share/github/apps/dashboard dashboard
-sudo ln -s /share/github/capstone/scripts/shiny capstone
+
+# static apps (source only — no local db)
+ln -sfn /share/github/CalCOFI/apps/oceano            oceano
+ln -sfn /share/github/CalCOFI/apps/dashboard         dashboard
+ln -sfn /share/github/CalCOFI/capstone/scripts/shiny capstone
 
 # data-backed apps: build their local DuckDB with prep_db.R BEFORE symlinking
 # (they read release/ingest parquet from public GCS over HTTPS — no creds).
 # re-run `Rscript prep_db.R TRUE` after each release_database.qmd to refresh.
-( cd /share/github/apps/ctd-viz   && Rscript prep_db.R )   # -> /share/data/ctd-viz/
-( cd /share/github/apps/db-viz-cruise && Rscript prep_db.R )   # -> /share/data/db-viz-cruise/
-sudo ln -s /share/github/apps/ctd-viz   ctd-viz
-sudo ln -s /share/github/apps/db-viz-cruise db-viz-cruise
-# back-compat alias so the old https://app.calcofi.io/datacheck/ URL keeps working
-sudo ln -s /share/github/apps/db-viz-cruise datacheck
+( cd /share/github/CalCOFI/apps/ctd-viz       && Rscript prep_db.R )   # -> /share/data/ctd-viz/
+( cd /share/github/CalCOFI/apps/db-viz-cruise && Rscript prep_db.R )   # -> /share/data/db-viz-cruise/
+ln -sfn /share/github/CalCOFI/apps/ctd-viz       ctd-viz
+ln -sfn /share/github/CalCOFI/apps/db-viz-cruise db-viz-cruise   # -> app.calcofi.io/db-viz-cruise/
+ln -sfn /share/github/CalCOFI/apps/db-viz-cruise datacheck       # back-compat: old /datacheck/ URL
+
+# db-viz-hex (formerly int-app) — the Shiny app is the repo's app/ subdir
+ln -sfn /share/github/CalCOFI/db-viz-hex/app     db-viz-hex      # -> app.calcofi.io/db-viz-hex/
+ln -sfn /share/github/CalCOFI/db-viz-hex/app     int             # back-compat: old /int/ URL
 ```
 
 ### turn on tile.calcofi.io
@@ -1118,7 +1133,7 @@ So instead, running:
 
 ```bash
 # change dir to local git clone of https://github.com/CalCOFI/server
-cd /share/github/server
+cd /share/github/CalCOFI/server
 
 # confirm .env file present (not on Github) with variables set for PASSWORD and ROPASS
 cat .env
