@@ -975,6 +975,27 @@ ln -sfn /share/github/CalCOFI/db-viz-hex/app     db-viz-hex      # -> app.calcof
 ln -sfn /share/github/CalCOFI/db-viz-hex/app     int             # back-compat: old /int/ URL
 ```
 
+### turn on static apps (`static.calcofi.io`)
+
+Static web apps (prebuilt HTML/JS/JSON — no server backend) are the static
+parallel to the Shiny apps: symlink each app's built dir under `/share/static/`
+and it serves at `https://static.calcofi.io/<app>/` (Caddy `file_server`, see
+`caddy/Caddyfile`). Useful for hosting a **branch preview** without touching the
+GitHub Pages production site. The apps use relative asset paths, so no per-app
+base-URL config is needed.
+
+```bash
+sudo mkdir -p /share/static
+# e.g. the station data portal (a feature branch clone)
+git clone -b feat/integrated-db-coverage \
+  https://github.com/CalCOFI/2026-ucsb-station-data-portal.git \
+  /share/github/CalCOFI/2026-ucsb-station-data-portal
+sudo ln -sfn /share/github/CalCOFI/2026-ucsb-station-data-portal/public \
+  /share/static/station-portal            # -> static.calcofi.io/station-portal/
+# DNS: point static.calcofi.io -> host IP (Caddy auto-provisions TLS), then reload:
+docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
 ### turn on tile.calcofi.io
 
 Now that database is populated, SSH into host and rerun to get tile container started.
