@@ -24,6 +24,18 @@ app.calcofi.io {
   reverse_proxy rstudio:3838
 }
 
+# static web apps — the static parallel to app.calcofi.io (Shiny). Each app is a
+# symlink under /share/static/<app> pointing at that repo's built static dir, so
+# it serves at https://static.calcofi.io/<app>/ (e.g. the station data portal).
+# The apps use relative asset paths, so no per-app base-URL config is needed.
+#   sudo mkdir -p /share/static
+#   sudo ln -s /share/github/CalCOFI/2026-ucsb-station-data-portal/public /share/static/station-portal
+static.calcofi.io {
+  root * /share/static
+  encode zstd gzip
+  file_server browse
+}
+
 tile.calcofi.io {
   reverse_proxy pg_tileserv:7800
 }
