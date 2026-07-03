@@ -991,7 +991,7 @@ git clone -b feat/integrated-db-coverage \
   https://github.com/CalCOFI/2026-ucsb-station-data-portal.git \
   /share/github/CalCOFI/2026-ucsb-station-data-portal
 sudo ln -sfn /share/github/CalCOFI/2026-ucsb-station-data-portal/public \
-  /share/static/station-portal            # -> static.calcofi.io/station-portal/
+  /share/static/db-viz-stations           # -> static.calcofi.io/db-viz-stations/
 # DNS: point static.calcofi.io -> host IP (Caddy auto-provisions TLS), then reload:
 docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
 ```
