@@ -15,7 +15,13 @@ services:
       - "443:443"
     restart: unless-stopped
     volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      # bind-mount the DIRECTORY, not the single Caddyfile: a single-file bind
+      # mount pins to the file's inode, so a `git pull` that replaces the file
+      # leaves the container reading stale config (then `caddy reload` no-ops).
+      # With the dir mounted, the container always sees the current file, so
+      # after editing: `git pull` + `docker compose exec caddy caddy reload
+      # --config /etc/caddy/Caddyfile` (no container recreate needed).
+      - ./caddy:/etc/caddy
       - caddy_data:/data
       - caddy_config:/config
       - /share:/share    
