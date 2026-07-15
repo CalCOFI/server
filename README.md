@@ -1,6 +1,16 @@
 # server
 calcofi.io server setup for R Shiny apps, RStudio IDE, R Plumber API, temporary PostGIS database, pg_tileserv
 
+## Shiny apps (`app.calcofi.io`)
+
+Shiny apps are served by `shiny-server` in the `rstudio` container from the
+`shiny_apps` volume (`/srv/shiny-server`). The [`CalCOFI/apps`](https://github.com/CalCOFI/apps)
+repo is cloned on the host at `/share/github/CalCOFI/apps`, and each app is
+symlinked into `/srv/shiny-server` (e.g. `/srv/shiny-server/ctd → …/apps/ctd-viz`).
+**To deploy an app change:** `ssh calcofi`, then
+`cd /share/github/CalCOFI/apps && git pull && touch <app>/restart.txt`. See the
+[Deploy section in `CalCOFI/apps`](https://github.com/CalCOFI/apps#deploy) for details.
+
 ## ERDDAP
 
 The `erddap` service (https://erddap.calcofi.io) bind-mounts its config from the
