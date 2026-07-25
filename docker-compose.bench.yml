@@ -4,6 +4,18 @@
 #
 #   docker compose -f docker-compose.bench.yml -p erddap-bench up -d
 #   BENCH_ERDDAP_MEMORY=1g docker compose -f docker-compose.bench.yml -p erddap-bench up -d   # heap sweep
+#   BENCH_MEM_LIMIT=4g BENCH_ERDDAP_MEMORY=2g docker compose ... up -d                        # container cap sweep
+#
+# TWO memory knobs, and the difference matters:
+#   BENCH_ERDDAP_MEMORY -> the JVM -Xmx (heap only)
+#   BENCH_MEM_LIMIT     -> a HARD cgroup cap on the whole container (heap + JVM
+#                          overhead + the DuckDB JDBC driver's NATIVE allocation)
+# The DuckDB path allocates largely OUTSIDE the Java heap, so -Xmx does not bound
+# it. Without a container cap an unconstrained query against the 232M-row
+# ctd_measurement view drove host memory to exhaustion and took the live services
+# down with it (2026-07-25). mem_limit makes the kernel OOM-kill the BENCH
+# container instead of the host, which is both safe and a better measurement:
+# "does this dataset serve within N GB?" becomes an answerable question.
 #
 # The data tree lives under the shared /share mount (host /ssd/share/data), so the
 # DuckDB view paths (baked into calcofi_ctd.db) and the NetCDF fileDir resolve
@@ -21,6 +33,12 @@ services:
       args:
         DUCKDB_JDBC_VERSION: "1.5.2.1"
     restart: "no"
+    # HARD cgroup cap on the whole container (docker compose v2 honours mem_limit
+    # outside swarm). memswap_limit == mem_limit disables swap, so the cap is real
+    # rather than degrading into host-wide thrash. Applies to erddap_bench ONLY —
+    # the live `erddap` in docker-compose.yml is a different project/container.
+    mem_limit: ${BENCH_MEM_LIMIT:-4g}
+    memswap_limit: ${BENCH_MEM_LIMIT:-4g}
     ports:
       - "8091:8080"
     volumes:
