@@ -8,6 +8,47 @@ file.calcofi.io {
 	file_server browse
 }
 
+# Browsable front door for the PUBLIC Google Cloud Storage buckets.
+#
+# Why this exists: storage.googleapis.com serves OBJECTS, not directories. It has
+# no folder listing, so a URL ending in "/" 404s unless an object literally has
+# that key — which is why the generated index.html pages had to be linked
+# explicitly. This vhost rewrites any folder URL to its index.html, so folder
+# browsing works the way people expect, under one clean hostname:
+#
+#   storage.calcofi.io/calcofi-db/ducklake/releases/          -> .../releases/index.html
+#   storage.calcofi.io/calcofi-db/ducklake/releases/latest.txt -> the object
+#
+# Named "storage" rather than "gcs" so the URL survives a move to S3 or similar.
+# The bucket allow-list is explicit: anything not named here is refused, so a
+# private bucket can never be reached through this host even by exact path.
+storage.calcofi.io {
+	encode zstd gzip
+
+	@public path_regexp bucket ^/(calcofi-db|calcofi-files-public|calcofi-projects)(/|$)
+	handle @public {
+		# folder URL -> the index.html object standing in for a listing
+		@dir path_regexp dir ^(.*)/$
+		rewrite @dir {re.dir.1}/index.html
+		reverse_proxy https://storage.googleapis.com {
+			header_up Host storage.googleapis.com
+		}
+	}
+
+	handle {
+		header Content-Type "text/plain; charset=utf-8"
+		respond `CalCOFI public storage.
+
+Browse a bucket:
+  /calcofi-db/            integrated database releases (Parquet + sidecars)
+  /calcofi-files-public/  public source files
+  /calcofi-projects/      project outputs
+
+Start here: /calcofi-db/ducklake/releases/
+` 404
+	}
+}
+
 pgadmin.calcofi.io {
 	reverse_proxy pgadmin:8088
 }
