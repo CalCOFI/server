@@ -37,6 +37,23 @@ storage.calcofi.io {
 		rewrite @dir {re.dir.1}/index.html
 		reverse_proxy https://storage.googleapis.com {
 			header_up Host storage.googleapis.com
+
+			# Published NetCDF is versioned by DB release, but the BYTES are written
+			# once: when a dataset is byte-identical to an earlier release we publish
+			# a manifest and index for the new release without re-uploading a
+			# multi-hundred-MB file. Object storage has no symlinks, so
+			# .../netcdf/<ds>/<release>/<ds>.nc has no object behind it in those
+			# releases. Redirect that miss to the release's index page, which names
+			# the canonical object and the release it is identical to.
+			#
+			# Scoped to netcdf/*.nc 404s ONLY — a blanket 404 handler here would mask
+			# every genuine missing object behind a redirect.
+			@nc_missing status 404
+			handle_response @nc_missing {
+				@is_nc path_regexp ncpath ^/calcofi-files-public/netcdf/([^/]+)/([^/]+)/[^/]+\.nc$
+				redir @is_nc https://storage.calcofi.io/calcofi-files-public/netcdf/{re.ncpath.1}/{re.ncpath.2}/ 302
+				respond "Not found." 404
+			}
 		}
 	}
 
