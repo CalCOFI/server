@@ -25,6 +25,11 @@ file.calcofi.io {
 storage.calcofi.io {
 	encode zstd gzip
 
+	# The root page is a generated object like every other index here, so there is
+	# ONE generator and ONE skin (workflows/scripts/build_storage_index.R) rather
+	# than HTML pasted into this file and drifting from the rest of the site.
+	rewrite / /calcofi-files-public/_index/storage.html
+
 	@public path_regexp bucket ^/(calcofi-db|calcofi-files-public|calcofi-projects)(/|$)
 	handle @public {
 		# folder URL -> the index.html object standing in for a listing
@@ -35,17 +40,14 @@ storage.calcofi.io {
 		}
 	}
 
+	# anything outside the allow-list: refuse, and say where to go instead
 	handle {
 		header Content-Type "text/plain; charset=utf-8"
-		respond `CalCOFI public storage.
+		respond `Not found.
 
-		Browse a bucket:
-		/calcofi-db/ integrated database releases (Parquet + sidecars)
-		/calcofi-files-public/ public source files
-		/calcofi-projects/ project outputs
-
-		Start here: /calcofi-db/ducklake/releases/
-		` 404
+Public buckets: /calcofi-db/  /calcofi-files-public/  /calcofi-projects/
+Start here: https://storage.calcofi.io/
+` 404
 	}
 }
 
