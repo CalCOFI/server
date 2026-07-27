@@ -1,9 +1,9 @@
 api.calcofi.io {
-  reverse_proxy plumber:8888
+	reverse_proxy plumber:8888
 }
 
 file.calcofi.io {
-  root * /share/public
+	root * /share/public
 	encode zstd gzip
 	file_server browse
 }
@@ -39,13 +39,13 @@ storage.calcofi.io {
 		header Content-Type "text/plain; charset=utf-8"
 		respond `CalCOFI public storage.
 
-Browse a bucket:
-  /calcofi-db/            integrated database releases (Parquet + sidecars)
-  /calcofi-files-public/  public source files
-  /calcofi-projects/      project outputs
+		Browse a bucket:
+		/calcofi-db/ integrated database releases (Parquet + sidecars)
+		/calcofi-files-public/ public source files
+		/calcofi-projects/ project outputs
 
-Start here: /calcofi-db/ducklake/releases/
-` 404
+		Start here: /calcofi-db/ducklake/releases/
+		` 404
 	}
 }
 
@@ -54,15 +54,15 @@ pgadmin.calcofi.io {
 }
 
 rstudio.calcofi.io {
-  reverse_proxy rstudio:8787
+	reverse_proxy rstudio:8787
 }
 
 shiny.calcofi.io {
-  reverse_proxy rstudio:3838
+	reverse_proxy rstudio:3838
 }
 
 app.calcofi.io {
-  reverse_proxy rstudio:3838
+	reverse_proxy rstudio:3838
 }
 
 # static web apps — the static parallel to app.calcofi.io (Shiny). Each app is a
@@ -72,17 +72,17 @@ app.calcofi.io {
 #   sudo mkdir -p /share/static
 #   sudo ln -s /share/github/CalCOFI/2026-ucsb-station-data-portal/public /share/static/station-portal
 static.calcofi.io {
-  root * /share/static
-  encode zstd gzip
-  file_server browse
+	root * /share/static
+	encode zstd gzip
+	file_server browse
 }
 
 tile.calcofi.io {
-  reverse_proxy pg_tileserv:7800
+	reverse_proxy pg_tileserv:7800
 }
 
 erddap.calcofi.io {
-  reverse_proxy erddap:8080
+	reverse_proxy erddap:8080
 }
 
 h3t.calcofi.io {
