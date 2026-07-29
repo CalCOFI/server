@@ -25,6 +25,21 @@ file.calcofi.io {
 storage.calcofi.io {
 	encode zstd gzip
 
+	# Access log — the ONLY record of how these two are really used. Both serve
+	# mostly machines (curl/R/Python pulling .csv, .nc, parquet), which run no
+	# JavaScript, so the GA4 tag on their HTML pages sees the browsing minority
+	# only. /share is bind-mounted from the host, so the nightly aggregator in
+	# scripts/caddy_usage.sh can read these without entering the container.
+	log {
+		output file /share/logs/caddy/{host}.log {
+			roll_size 64MiB
+			roll_keep 14
+			roll_keep_for 2160h
+		}
+		format json
+	}
+
+
 	# The root page is a generated object like every other index here, so there is
 	# ONE generator and ONE skin (workflows/scripts/build_storage_index.R) rather
 	# than HTML pasted into this file and drifting from the rest of the site.
@@ -102,6 +117,20 @@ tile.calcofi.io {
 
 erddap.calcofi.io {
 	reverse_proxy erddap:8080
+
+	# Access log — the ONLY record of how these two are really used. Both serve
+	# mostly machines (curl/R/Python pulling .csv, .nc, parquet), which run no
+	# JavaScript, so the GA4 tag on their HTML pages sees the browsing minority
+	# only. /share is bind-mounted from the host, so the nightly aggregator in
+	# scripts/caddy_usage.sh can read these without entering the container.
+	log {
+		output file /share/logs/caddy/{host}.log {
+			roll_size 64MiB
+			roll_keep 14
+			roll_keep_for 2160h
+		}
+		format json
+	}
 }
 
 h3t.calcofi.io {
