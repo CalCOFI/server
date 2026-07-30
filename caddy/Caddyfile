@@ -32,7 +32,7 @@ storage.calcofi.io {
 	# scripts/caddy_usage.sh can read these without entering the container.
 	log {
 		# static filename: Caddy rejects placeholders like {host} here
-		output file /share/logs/caddy/erddap.log {
+		output file /share/logs/caddy/storage.log {
 			roll_size 64MiB
 			roll_keep 14
 			roll_keep_for 2160h
@@ -125,7 +125,7 @@ erddap.calcofi.io {
 	# only. /share is bind-mounted from the host, so the nightly aggregator in
 	# scripts/caddy_usage.sh can read these without entering the container.
 	log {
-		output file /share/logs/caddy/storage.log {
+		output file /share/logs/caddy/erddap.log {
 			roll_size 64MiB
 			roll_keep 14
 			roll_keep_for 2160h
