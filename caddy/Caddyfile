@@ -46,6 +46,29 @@ storage.calcofi.io {
 	# than HTML pasted into this file and drifting from the rest of the site.
 	rewrite / /calcofi-files-public/_index/storage.html
 
+	# robots.txt — served inline, BEFORE the bucket handler, so it cannot be lost
+	# by an index regeneration and does not need a bucket object.
+	#
+	# The index pages are a browsable catalog and are welcome in search results.
+	# The objects behind them are not: ctd-cast_full.nc alone is 1.5 GB, every
+	# byte is proxied through this server (reverse_proxy, not a redirect), and a
+	# crawl of the tree would be billed as VM egress. Two full downloads of that
+	# one file were essentially all of one day's 3.1 GB.
+	handle /robots.txt {
+		header Content-Type "text/plain; charset=utf-8"
+		respond `# Catalog pages: crawl away. Data objects: please do not.
+User-agent: *
+Crawl-delay: 10
+Disallow: /*.nc$
+Disallow: /*.nc4$
+Disallow: /*.parquet$
+Disallow: /*.duckdb$
+Disallow: /*.zip$
+Disallow: /*.tar$
+Disallow: /*.gz$
+` 200
+	}
+
 	@public path_regexp bucket ^/(calcofi-db|calcofi-files-public|calcofi-projects)(/|$)
 	handle @public {
 		# folder URL -> the index.html object standing in for a listing
