@@ -140,7 +140,56 @@ tile.calcofi.io {
 }
 
 erddap.calcofi.io {
-	reverse_proxy erddap:8080
+	# robots.txt — ERDDAP's own recommendation, adapted. Crawlers fill in
+	# ERDDAP's data-request forms and generate an effectively infinite number of
+	# expensive queries: of 2,966 requests on 2026-07-29, 1,712 carried a query
+	# string and 1,593 hit /erddap/tabledap. 36 requests asked for this file and
+	# got a 404, so the bots are looking for it.
+	#
+	# Blocks the DATA outputs by extension and the file browser; deliberately
+	# leaves /erddap/info/, the dataset .html pages and the search UI crawlable,
+	# because being findable is the point of publishing a catalog. Served from
+	# Caddy rather than Tomcat so it needs no image rebuild.
+	# Ref: https://erddap.github.io/docs/server-admin/additional-information
+	handle /robots.txt {
+		header Content-Type "text/plain; charset=utf-8"
+		respond `# Catalog pages: crawl away. Data requests: please do not —
+# they are generated from forms and are effectively infinite.
+User-Agent: *
+Crawl-delay: 10
+Disallow: /erddap/files/
+Disallow: /files/
+Disallow: /images/
+Disallow: /?
+Disallow: /?*
+Disallow: /*.asc*
+Disallow: /*.csv*
+Disallow: /*.dods*
+Disallow: /*.esriAscii*
+Disallow: /*.esriCsv*
+Disallow: /*.geoJson*
+Disallow: /*.htmlTable*
+Disallow: /*.json*
+Disallow: /*.mat*
+Disallow: /*.nc*
+Disallow: /*.odvTxt*
+Disallow: /*.tsv*
+Disallow: /*.xhtml*
+Disallow: /*.geotif*
+Disallow: /*.itx*
+Disallow: /*.kml*
+Disallow: /*.pdf*
+Disallow: /*.png*
+Disallow: /*.large*
+Disallow: /*.small*
+Disallow: /*.transparentPng*
+Sitemap: https://erddap.calcofi.io/erddap/sitemap.xml
+` 200
+	}
+
+	handle {
+		reverse_proxy erddap:8080
+	}
 
 	# Access log — the ONLY record of how these two are really used. Both serve
 	# mostly machines (curl/R/Python pulling .csv, .nc, parquet), which run no
