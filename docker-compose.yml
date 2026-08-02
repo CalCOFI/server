@@ -124,6 +124,10 @@ services:
   plumber:
     container_name: plumber
     build: ./plumber
+    # Mirrors the Dockerfile CMD so the corrected path takes effect on `up -d`
+    # WITHOUT a full image rebuild — the image itself is fine, only the baked
+    # CMD had the stale pre-reorganization path.
+    command: Rscript /share/github/CalCOFI/api/run-api.R
     ports:
       - 8888:8888
     restart: unless-stopped

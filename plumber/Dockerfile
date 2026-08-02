@@ -25,5 +25,9 @@ RUN installGithub.r \
 
 EXPOSE 8888
 
-CMD Rscript /share/github/api/run-api.R
+# The api repo moved to /share/github/CalCOFI/api in the July 2026 repo
+# reorganization; this path kept the pre-move location and the container has been
+# crash-looping ever since ("cannot open file '/share/github/api/run-api.R'"),
+# restarting every few seconds under `restart: unless-stopped`.
+CMD Rscript /share/github/CalCOFI/api/run-api.R
 
