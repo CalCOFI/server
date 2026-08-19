@@ -480,16 +480,21 @@ BEGIN
   -- All files of the winning (stage, archive) are best (a cruise may be split across files).
   -- This is the one sanctioned UPDATE on ctd.file; it is a derived column, not source data.
   PERFORM set_config('ctd.allow_mutation', 'on', true);
+  -- …and one DIRECTORY within it: an archive can carry the same files twice (2204SH: csvs-plots/ and
+  -- db-csvs/); prefer a db-csv(s) directory, then the alphabetically first.
   WITH ranked AS (
-    SELECT study, cast_dir, data_stage, archive,
+    SELECT study, cast_dir, data_stage, archive, dir,
            row_number() OVER (PARTITION BY study, cast_dir ORDER BY
              array_position(ARRAY['final','preliminary_with_bottle','preliminary_without_bottle'], data_stage),
              CASE WHEN archive LIKE '%\_CTDFinalDB.zip' THEN 2 WHEN archive LIKE '%\_CTDFinalQC.zip' THEN 0 ELSE 1 END,
-             archive) AS rnk
-    FROM (SELECT DISTINCT study, cast_dir, data_stage, archive FROM ctd.file) d)
+             archive,
+             CASE WHEN dir ~ 'db[_-]?csvs?$' THEN 0 ELSE 1 END,
+             dir) AS rnk
+    FROM (SELECT DISTINCT study, cast_dir, data_stage, archive, regexp_replace(path, '/[^/]+$', '') AS dir FROM ctd.file) d)
   UPDATE ctd.file f SET is_best_stage = (r.rnk = 1)
   FROM ranked r
   WHERE f.study = r.study AND f.cast_dir = r.cast_dir AND f.data_stage = r.data_stage AND f.archive = r.archive
+    AND regexp_replace(f.path, '/[^/]+$', '') = r.dir
     AND f.is_best_stage IS DISTINCT FROM (r.rnk = 1);
   PERFORM set_config('ctd.allow_mutation', 'off', true);
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
