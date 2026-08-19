@@ -46,22 +46,58 @@ services:
       - shiny_apps:/srv/shiny-server
       - /home/bebest/.ssh:/home/bebest/.ssh   # persistent git/SSH identity for bebest (uid 1003 matches host)
 
+  # PostgreSQL 18 + PostGIS 3.6 (upgraded from 17.1/3.5 on 2026-08-19 by dump/restore —
+  # scripts/pg_upgrade_18.sh). Two databases: `gis` (legacy 2022 schema; pg_tileserv,
+  # api.calcofi.io) and `calcofi` (CTD team QA/QC work; postgis/init/*.sql).
+  #
+  # VOLUME — read before "cleaning up": the 18 image's VOLUME is /var/lib/postgresql with
+  # PGDATA=/var/lib/postgresql/18/docker, so the named volume below IS the data. Under the
+  # 17 image the same mount left PGDATA (/var/lib/postgresql/data) on an ANONYMOUS volume
+  # (7ea47db1…) — `compose down && up` would have started an empty database. That old
+  # volume is kept until the restore is verified, then `docker volume rm`.
+  #
+  # CONFIG — settings are passed as -c flags here (visible in the diff). The old
+  # ./postgis/postgresql.conf bind-mount was a no-op: the server read $PGDATA/postgresql.conf
+  # and ran with the 128 MB shared_buffers default on a 15 GB box.
   postgis:
     container_name: postgis
-    image: postgis/postgis:17-3.5
+    image: postgis/postgis:18-3.6
     environment:
       POSTGRES_DB: gis
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: $PASSWORD
+    command: >
+      postgres
+        -c shared_buffers=2GB
+        -c effective_cache_size=6GB
+        -c work_mem=64MB
+        -c maintenance_work_mem=1GB
+        -c max_wal_size=4GB
+        -c random_page_cost=1.1
+        -c max_parallel_workers_per_gather=2
+        -c shared_preload_libraries=pg_stat_statements
+        -c log_connections=on
+        -c log_min_duration_statement=5s
+        -c log_statement=ddl
+        -c track_io_timing=on
+        -c timezone=UTC
+    # parallel query uses POSIX shm under /dev/shm; Docker's 64 MB default is too small
+    shm_size: 1gb
     volumes:
       - postgis_data:/var/lib/postgresql
-      - ./postgis/postgresql.conf:/etc/postgresql/postgresql.conf
       - /share:/share
     restart: unless-stopped
     healthcheck:
-      test: 'exit 0'
+      test: ["CMD-SHELL", "pg_isready -U admin -d gis"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    # loopback only: the SSH tunnel connects to localhost, and the other services reach it
+    # by name on the compose network; GCP's firewall already blocks 5432, this removes the
+    # dependency on that.
     ports:
-      - 5432:5432
+      - "127.0.0.1:5432:5432"
       
   # Nightly pg_dump rotation to /share/pg_backups/{daily,weekly,monthly,last}. The LOCAL
   # rotation is deliberately short (the ssd disk is 200 GB and stays that way — decision D6,
@@ -71,7 +107,7 @@ services:
   # room for one dump + one restore of the largest DB; do not grow KEEP_* to "be safe".
   pg_backups:
     container_name: pg_backups
-    image: prodrigestivill/postgres-backup-local:17
+    image: prodrigestivill/postgres-backup-local:18   # pg_dump must be >= server major
     restart: always
     user: postgres:postgres # Optional: see below
     volumes:
@@ -83,7 +119,7 @@ services:
       - postgis
     environment:
       - POSTGRES_HOST=postgis
-      - POSTGRES_DB=gis            # comma/space list; `calcofi` is added when that DB exists (WS2)
+      - POSTGRES_DB=gis calcofi
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=${PASSWORD}
       - POSTGRES_EXTRA_OPTS=-Z6 --blobs
@@ -126,7 +162,7 @@ services:
       #PGADMIN_CONFIG_CONFIG_DATABASE_URI: "'postgresql://admin:$PASSWORD@postgis:5432/gis'"
       # test: psql -h postgis -U admin -d gis
     ports:
-      - 8088:8088
+      - "127.0.0.1:8088:8088"
     volumes:
       - /share/pgadmin:/var/lib/pgadmin
     depends_on:
