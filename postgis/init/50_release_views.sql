@@ -13,18 +13,21 @@ CREATE SCHEMA IF NOT EXISTS release AUTHORIZATION calcofi_admin;
 GRANT USAGE ON SCHEMA release TO calcofi_reader;
 SET ROLE calcofi_admin;
 
-CREATE OR REPLACE VIEW release.cruise AS
+DROP VIEW IF EXISTS release.cruise;
+CREATE VIEW release.cruise AS
   SELECT r['cruise_key']::text AS cruise_key, r['date_ym']::date AS date_ym, r['ship_key']::text AS ship_key,
          r['ship_name']::text AS ship_name, r['ship_nodc']::text AS ship_nodc, r['year']::int AS year, r['month']::int AS month,
          r['ichthyo']::bigint AS ichthyo, r['bottle']::bigint AS bottle, r['ctd_cast']::bigint AS ctd_cast, r['dic']::bigint AS dic
   FROM read_parquet('https://storage.googleapis.com/calcofi-db/ducklake/releases/v2026.08.14/parquet/cruise.parquet') r;
 COMMENT ON VIEW release.cruise IS 'Release v2026.08.14 cruise table, read live from the public Parquet via pg_duckdb.';
 
-CREATE OR REPLACE VIEW release.ship AS
+DROP VIEW IF EXISTS release.ship;
+CREATE VIEW release.ship AS
   SELECT r['ship_key']::text AS ship_key, r['ship_name']::text AS ship_name, r['ship_nodc']::text AS ship_nodc
   FROM read_parquet('https://storage.googleapis.com/calcofi-db/ducklake/releases/v2026.08.14/parquet/ship.parquet') r;
 
-CREATE OR REPLACE VIEW release.dataset AS
+DROP VIEW IF EXISTS release.dataset;
+CREATE VIEW release.dataset AS
   SELECT r['dataset_key']::text AS dataset_key, r['dataset_name']::text AS dataset_name, r['provider']::text AS provider,
          r['category']::text AS category, r['coverage_temporal']::text AS coverage_temporal,
          r['coverage_spatial']::text AS coverage_spatial, r['link_calcofi_org']::text AS link_calcofi_org
