@@ -151,16 +151,29 @@ services:
       # create with rclone/setup_service_account.sh, then scp to the VM)
       - /etc/rclone/calcofi-admin-sa.json:/config/rclone/calcofi-admin-sa.json:ro
 
+  # pgAdmin 4 (server mode) at https://pgadmin.calcofi.io — pinned; bump deliberately.
+  # Users: pre-created with `setup.py add-user` (see README "pgAdmin"); with Google sign-in
+  # enabled (.env PGADMIN_AUTH_SOURCES + client id/secret) they log in with their Google
+  # account, and OAUTH2_AUTO_CREATE_USER=False keeps it an allow-list — an unknown Google
+  # account is refused even though it authenticates. The internal `ben@ecoquants.com`
+  # account (PGADMIN_DEFAULT_*) stays as break-glass. Servers `calcofi`/`gis` are registered
+  # once by the admin and SHARED, so every user sees them and supplies their own DB password.
+  # PGADMIN_CONFIG_* -> /pgadmin4/config_distro.py (Python literals, hence the quoting).
   pgadmin:
     container_name: pgadmin
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:9.17
     restart: always
     environment:
       PGADMIN_DEFAULT_EMAIL: ben@ecoquants.com
       PGADMIN_DEFAULT_PASSWORD: ${PASSWORD}
       PGADMIN_LISTEN_PORT: 8088
-      #PGADMIN_CONFIG_CONFIG_DATABASE_URI: "'postgresql://admin:$PASSWORD@postgis:5432/gis'"
-      # test: psql -h postgis -U admin -d gis
+      # ['internal'] until the Google OAuth client exists; then ['oauth2','internal'] in .env
+      PGADMIN_CONFIG_AUTHENTICATION_SOURCES: "${PGADMIN_AUTH_SOURCES:-['internal']}"
+      PGADMIN_CONFIG_OAUTH2_AUTO_CREATE_USER: "False"
+      PGADMIN_CONFIG_OAUTH2_CONFIG: "[{'OAUTH2_NAME':'google','OAUTH2_DISPLAY_NAME':'Google','OAUTH2_CLIENT_ID':'${PGADMIN_OAUTH2_CLIENT_ID:-}','OAUTH2_CLIENT_SECRET':'${PGADMIN_OAUTH2_CLIENT_SECRET:-}','OAUTH2_SERVER_METADATA_URL':'https://accounts.google.com/.well-known/openid-configuration','OAUTH2_SCOPE':'openid email profile','OAUTH2_ICON':'fa-google','OAUTH2_BUTTON_COLOR':'#4285F4'}]"
+      # per-user master password encrypts the DB passwords each user chooses to save
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "True"
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "True"
     ports:
       - "127.0.0.1:8088:8088"
     volumes:
