@@ -45,13 +45,13 @@ rclone sync "$SRC" "$DST" \
   --exclude "*-latest.sql.gz" \
   --include "daily/**" --include "weekly/**" --include "monthly/**" \
   --exclude "*" \
-  --checksum --transfers 4 --checkers 8 \
+  --skip-links --checksum --transfers 4 --checkers 8 \
   --stats 60s --stats-one-line -v
 
 # 2. COPY (never delete) manual dumps: the local copy is deleted once it is off-site, to
 #    keep the 200 GB disk free, and the bucket keeps it.
 if [ -d "$SRC/manual" ]; then
-  rclone copy "$SRC/manual" "$DST/manual" --checksum --transfers 4 -v --stats-one-line
+  rclone copy "$SRC/manual" "$DST/manual" --skip-links --checksum --transfers 4 -v --stats-one-line
 fi
 
 # newest daily object per database, from the DESTINATION (what we actually have off-site)
