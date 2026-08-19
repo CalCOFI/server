@@ -138,7 +138,8 @@ CREATE TABLE IF NOT EXISTS ctd.file (
   data_stage    text NOT NULL CHECK (data_stage IN ('final','preliminary_with_bottle','preliminary_without_bottle')),
   cast_dir      char(1) NOT NULL CHECK (cast_dir IN ('D','U')),
   is_best_stage boolean NOT NULL DEFAULT false,  -- the chosen archive+stage for this study × cast_dir (see refresh_derived)
-  sha256        text NOT NULL UNIQUE,
+  sha256        text NOT NULL,            -- NOT unique: JRW's *_CTDFinalDB.zip and calcofi.org's *_CTDFinalQC.zip
+                                          -- carry byte-identical files for several cruises (both are loaded)
   n_bytes       bigint NOT NULL,
   n_rows        int,
   gcs_uri       text,                     -- where the archive lives off-box
@@ -146,8 +147,9 @@ CREATE TABLE IF NOT EXISTS ctd.file (
   loaded_by     text NOT NULL DEFAULT current_user,
   UNIQUE (archive, path)
 );
-COMMENT ON TABLE ctd.file IS 'One row per source file of the CTD archive (immutable; a re-load of a changed file is a new row with a new sha256).';
+COMMENT ON TABLE ctd.file IS 'One row per source file (archive member) of the CTD archive, immutable. Identity is (archive, path); sha256 records content (the same content can appear in two archives).';
 CREATE INDEX IF NOT EXISTS file_study_idx ON ctd.file (study, data_stage, cast_dir);
+CREATE INDEX IF NOT EXISTS file_sha256_idx ON ctd.file (sha256);
 
 -- ── ctd.scan — the 82 db-CSV columns, verbatim ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS ctd.scan (
