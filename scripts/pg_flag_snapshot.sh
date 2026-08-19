@@ -17,7 +17,7 @@
 set -euo pipefail
 OUT=/share/data/ctd/exports/qc
 DST=gcs-calcofi-sa:calcofi-db/qc/ctd
-mkdir -p "$OUT"
+install -d -m 2775 -g calcofi "$OUT"   # group-writable: the exporter runs as bebest in the rstudio container
 
 docker exec -u bebest rstudio Rscript /share/github/CalCOFI/server/scripts/pg_flag_snapshot.R
 docker exec rclone rclone copy /share/data/ctd/exports/qc "$DST" --checksum -q
