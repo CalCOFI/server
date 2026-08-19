@@ -66,6 +66,17 @@ no tunnel, `RPostgres` + `~/.pgpass` just works). User instructions:
 https://calcofi.io/docs/server-access.html. Upgrade history: `scripts/pg_upgrade_18.sh`
 (2026-08-19, dump/restore 17.1→18.6, log in `/share/logs/pg_upgrade_18.log`).
 
+Two bridges to the DuckDB release, one in each direction:
+
+- **release → PG**: `release.{cruise,ship,dataset}` views read the public release Parquet
+  live via pg_duckdb (`postgis/init/50_release_views.sql`, version-pinned in the URLs;
+  `CalCOFI/workflows` `scripts/deploy_consumers.sh` step 3b re-points them at each promoted
+  release).
+- **PG → release**: `scripts/pg_flag_snapshot.sh` (host cron 01:20 UTC) publishes the CTD QC
+  ledger to public `gs://calcofi-db/qc/ctd/{flag_accepted,flag_ledger}.parquet` +
+  `flag_meta.json`, so the release ingest can apply accepted flags with no live PG
+  dependency.
+
 ## Users (SSH/SFTP + database accounts) — `users/`
 
 `users/users.csv` + `users/keys/<username>.pub` → `sudo scripts/add_user.sh <username>|--all`
