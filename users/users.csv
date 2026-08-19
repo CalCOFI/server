@@ -1,0 +1,7 @@
+username,uid,full_name,email,pg_roles,rstudio
+bebest,1003,Ben Best,bebest@ucsd.edu,calcofi_admin,yes
+rswalethorp,1004,Rasmus Swalethorp,rswalethorp@ucsd.edu,calcofi_curator,yes
+bmgire,1005,Benjamin Gire,bmgire@ucsd.edu,calcofi_curator,yes
+kdvogel,1006,Kelsey Vogel,kdvogel@ucsd.edu,calcofi_curator,yes
+bhuang,1007,Betty Huang,bhuang0022@gmail.com,calcofi_writer,yes
+esatterthwaite,1008,Erin Satterthwaite,esatterthwaite@ucsd.edu,calcofi_curator,yes
