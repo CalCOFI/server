@@ -99,10 +99,13 @@ for U in "${TARGETS[@]}"; do
   fi
 
   # ---- pgadmin (internal account; same password) -------------------------------------------
+  # pgAdmin 9.17's `update-user` raises KeyError('role') unless --role is given, so always pass
+  # it; calcofi_admin people are pgAdmin Administrators (can share servers), others Users.
+  PGA_ROLE=User; [[ "$PGROLES" == *calcofi_admin* ]] && PGA_ROLE=Administrator
   if docker exec pgadmin /venv/bin/python3 /pgadmin4/setup.py get-users --json 2>/dev/null | grep -q "\"$EMAIL\""; then
-    run "docker exec pgadmin /venv/bin/python3 /pgadmin4/setup.py update-user '$EMAIL' --password '$PW' >/dev/null"
+    run "docker exec pgadmin /venv/bin/python3 /pgadmin4/setup.py update-user '$EMAIL' --password '$PW' --role $PGA_ROLE >/dev/null"
   else
-    run "docker exec pgadmin /venv/bin/python3 /pgadmin4/setup.py add-user '$EMAIL' '$PW' --role User >/dev/null"
+    run "docker exec pgadmin /venv/bin/python3 /pgadmin4/setup.py add-user '$EMAIL' '$PW' --role $PGA_ROLE >/dev/null"
   fi
 
   # ---- rstudio container mirror -------------------------------------------------------------
