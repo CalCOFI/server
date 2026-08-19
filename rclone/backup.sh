@@ -16,13 +16,13 @@
 # been failing every night since 2025-02-02 with "Drive storage quota has been exceeded"
 # — the database had no off-site copy for 18 months. Do not point this back at Drive.
 #
-# What is deliberately NOT mirrored:
+# What is deliberately NOT mirrored (the sync is an allow-list of daily/weekly/monthly):
 #   last/**            hard links to the newest dump (BACKUP_KEEP_MINS) — a duplicate
 #   *-latest.sql.gz    symlinks (rclone can't follow them without -L, which would upload
 #                      a second full copy of each latest file)
-#   _old/**, _drill/** pre-2024 leftovers (archived once under postgres/legacy-2024/) and
-#                      the restore drill's scratch space
+#   _drill/**          the restore drill's scratch space
 #   _status/**         written below, then copied up explicitly
+#   manual/**          COPIED (step 2), not synced — deleting it locally must not delete it off-site
 set -eu
 
 SRC="/share/pg_backups"
@@ -36,11 +36,23 @@ mkdir -p "$STATUS_DIR"
 
 echo "[$(ts)] pg_backups: $SRC -> $DST"
 
+# 1. MIRROR the rotation dirs only. Filter rules apply to both sides, so anything in the
+#    bucket outside daily/weekly/monthly (manual/, legacy-*/, _status/) is invisible to
+#    this sync and can never be deleted by it. (The first run, 2026-08-19, synced the whole
+#    prefix and deleted legacy-2022/ and legacy-2024/ — recovered from noncurrent versions.
+#    That is what the versioning is for, and why this is now an allow-list.)
 rclone sync "$SRC" "$DST" \
-  --exclude "last/**" --exclude "*-latest.sql.gz" \
-  --exclude "_old/**" --exclude "_drill/**" --exclude "_status/**" \
+  --exclude "*-latest.sql.gz" \
+  --include "daily/**" --include "weekly/**" --include "monthly/**" \
+  --exclude "*" \
   --checksum --transfers 4 --checkers 8 \
   --stats 60s --stats-one-line -v
+
+# 2. COPY (never delete) manual dumps: the local copy is deleted once it is off-site, to
+#    keep the 200 GB disk free, and the bucket keeps it.
+if [ -d "$SRC/manual" ]; then
+  rclone copy "$SRC/manual" "$DST/manual" --checksum --transfers 4 -v --stats-one-line
+fi
 
 # newest daily object per database, from the DESTINATION (what we actually have off-site)
 latest="$(rclone lsf "$DST/daily/" --files-only 2>/dev/null | grep -v -- '-latest' | sort | tail -n 5 | tr '\n' ' ')"
