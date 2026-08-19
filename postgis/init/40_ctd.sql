@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS ctd.file (
   cruise_key    text,                     -- integrated-db key (YYYY-MM-NODC) via the release cruise table; NULL if unmapped
   data_stage    text NOT NULL CHECK (data_stage IN ('final','preliminary_with_bottle','preliminary_without_bottle')),
   cast_dir      char(1) NOT NULL CHECK (cast_dir IN ('D','U')),
-  is_best_stage boolean NOT NULL DEFAULT false,  -- best stage available for this study (final > prelim+btl > prelim)
+  is_best_stage boolean NOT NULL DEFAULT false,  -- the chosen archive+stage for this study × cast_dir (see refresh_derived)
   sha256        text NOT NULL UNIQUE,
   n_bytes       bigint NOT NULL,
   n_rows        int,
@@ -445,13 +445,24 @@ END $$;
 CREATE OR REPLACE FUNCTION ctd.refresh_derived() RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = ctd, public AS $$
 BEGIN
-  -- best-stage flags, recomputed from what is loaded (final > preliminary_with_bottle > preliminary_without_bottle).
+  -- is_best_stage: per (study, cast_dir) pick ONE archive — by data stage (final > preliminary_with_bottle
+  -- > preliminary_without_bottle), then, when two archives publish the same stage (calcofi.org's
+  -- *_CTDFinalQC.zip and J. Wilkinson's *_CTDFinalDB.zip both carry "final" for 1998-2002), prefer
+  -- calcofi.org (the ingest does the same: "where both publish the same cruise, calcofi.org is used").
+  -- All files of the winning (stage, archive) are best (a cruise may be split across files).
   -- This is the one sanctioned UPDATE on ctd.file; it is a derived column, not source data.
   PERFORM set_config('ctd.allow_mutation', 'on', true);
-  UPDATE ctd.file f SET is_best_stage = (f.data_stage = b.best)
-  FROM (SELECT study, (array_agg(data_stage ORDER BY array_position(ARRAY['final','preliminary_with_bottle','preliminary_without_bottle'], data_stage)))[1] AS best
-        FROM ctd.file GROUP BY study) b
-  WHERE f.study = b.study AND f.is_best_stage IS DISTINCT FROM (f.data_stage = b.best);
+  WITH ranked AS (
+    SELECT study, cast_dir, data_stage, archive,
+           row_number() OVER (PARTITION BY study, cast_dir ORDER BY
+             array_position(ARRAY['final','preliminary_with_bottle','preliminary_without_bottle'], data_stage),
+             CASE WHEN archive LIKE '%\_CTDFinalDB.zip' THEN 2 WHEN archive LIKE '%\_CTDFinalQC.zip' THEN 0 ELSE 1 END,
+             archive) AS rnk
+    FROM (SELECT DISTINCT study, cast_dir, data_stage, archive FROM ctd.file) d)
+  UPDATE ctd.file f SET is_best_stage = (r.rnk = 1)
+  FROM ranked r
+  WHERE f.study = r.study AND f.cast_dir = r.cast_dir AND f.data_stage = r.data_stage AND f.archive = r.archive
+    AND f.is_best_stage IS DISTINCT FROM (r.rnk = 1);
   PERFORM set_config('ctd.allow_mutation', 'off', true);
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
              WHERE n.nspname = 'ctd' AND c.relname = 'cast' AND c.relkind = 'm' AND c.relispopulated) THEN
