@@ -369,7 +369,9 @@ CREATE OR REPLACE VIEW ctd.v_scan_best AS
   SELECT s.* FROM ctd.scan s JOIN ctd.file f USING (file_id) WHERE f.is_best_stage;
 COMMENT ON VIEW ctd.v_scan_best IS 'ctd.scan for the best data stage per study only — what most analyses want. Superseded prelim files stay in ctd.scan for comparison.';
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS ctd.cast AS
+-- (DROP + CREATE so a definition change here takes effect on re-run; it is derived, so this is safe)
+DROP MATERIALIZED VIEW IF EXISTS ctd.cast;
+CREATE MATERIALIZED VIEW ctd.cast AS
   SELECT
     f.file_id, f.study, f.cruise_key, f.data_stage, f.cast_dir, f.is_best_stage,
     s.cast_id,
@@ -378,18 +380,22 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS ctd.cast AS
     min(s.line)           AS line,
     min(s.sta)            AS sta,
     min(s.date_time_utc)  AS datetime_utc,
-    avg(s.lat_dec)        AS lat,
-    avg(s.lon_dec)        AS lon,
+    -- the source uses -99 as a missing-position sentinel (kept verbatim in ctd.scan); a position is
+    -- only a position inside the valid range
+    avg(s.lat_dec) FILTER (WHERE s.lat_dec BETWEEN -90 AND 90)   AS lat,
+    avg(s.lon_dec) FILTER (WHERE s.lon_dec BETWEEN -180 AND 180) AS lon,
     count(*)              AS n_scans,
     min(s.depth)          AS depth_min,
     max(s.depth)          AS depth_max,
-    CASE WHEN avg(s.lon_dec) IS NOT NULL AND avg(s.lat_dec) IS NOT NULL
-         THEN ST_SetSRID(ST_MakePoint(avg(s.lon_dec), avg(s.lat_dec)), 4326) END AS geom
+    CASE WHEN avg(s.lon_dec) FILTER (WHERE s.lon_dec BETWEEN -180 AND 180) IS NOT NULL
+          AND avg(s.lat_dec) FILTER (WHERE s.lat_dec BETWEEN -90 AND 90) IS NOT NULL
+         THEN ST_SetSRID(ST_MakePoint(avg(s.lon_dec) FILTER (WHERE s.lon_dec BETWEEN -180 AND 180),
+                                      avg(s.lat_dec) FILTER (WHERE s.lat_dec BETWEEN -90 AND 90)), 4326) END AS geom
   FROM ctd.scan s JOIN ctd.file f USING (file_id)
   GROUP BY f.file_id, f.study, f.cruise_key, f.data_stage, f.cast_dir, f.is_best_stage, s.cast_id
 WITH NO DATA;
-CREATE UNIQUE INDEX IF NOT EXISTS cast_pk ON ctd.cast (file_id, cast_id);
-CREATE INDEX IF NOT EXISTS cast_geom_idx ON ctd.cast USING gist (geom);
+CREATE UNIQUE INDEX cast_pk ON ctd.cast (file_id, cast_id);
+CREATE INDEX cast_geom_idx ON ctd.cast USING gist (geom);
 COMMENT ON MATERIALIZED VIEW ctd.cast IS 'One row per cast per file, from the scan header columns (immutable by construction: derived from ctd.scan). Refresh with ctd.refresh_derived().';
 
 -- ── generated QC views: <var>_qc / <var>_fix beside every measurement column ────────────────
