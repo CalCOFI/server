@@ -50,6 +50,57 @@ replaces the default base entirely and is parsed with stricter flags, failing on
 On an ERDDAP image upgrade, re-derive `messages.xml` from the new default and
 re-apply the `startBodyHtml5` block.
 
+## PostgreSQL (18 + PostGIS 3.6) — `gis` + `calcofi`
+
+`postgis` service in `docker-compose.yml` (settings as `-c` flags there; see the comment block
+for the volume history). Two databases:
+
+| db | what | who |
+|---|---|---|
+| `gis` | legacy 2022 schema (`public`, `dev*`, `prod`) behind tile.calcofi.io / api.calcofi.io | `admin`, `mfrants`, `ro_user` |
+| `calcofi` | CTD team QA/QC work: schemas `ctd` (curated, owner `calcofi_admin`), `work` (shared scratch), one personal schema per person; `postgis/init/*.sql` | group roles `calcofi_reader/writer/curator/loader/admin` + one login role per person (`users/users.csv`) |
+
+Reach it only through an SSH tunnel (port 5432 is bound to 127.0.0.1 and GCP's firewall
+blocks it) or from the compose network (`host=postgis`, e.g. from the `rstudio` container —
+no tunnel, `RPostgres` + `~/.pgpass` just works). User instructions:
+https://calcofi.io/docs/server-access.html. Upgrade history: `scripts/pg_upgrade_18.sh`
+(2026-08-19, dump/restore 17.1→18.6, log in `/share/logs/pg_upgrade_18.log`).
+
+## Users (SSH/SFTP + database accounts) — `users/`
+
+`users/users.csv` + `users/keys/<username>.pub` → `sudo scripts/add_user.sh <username>|--all`
+(idempotent) → host login (key-only, group `calcofi`, no sudo), DB role + personal schema +
+`~/.pgpass`, pgAdmin account, mirrored `rstudio` account. `scripts/remove_user.sh` locks.
+Details in [`users/README.md`](users/README.md). The older "Add user" section below is the
+2022 manual procedure (historical).
+
+Shared folder for the CTD team: `/share/data/ctd/{incoming,archive,exports}` (`root:calcofi`,
+setgid 2775; `/etc/profile.d/calcofi.sh` sets `umask 002` for members).
+
+## pgAdmin — https://pgadmin.calcofi.io (`dpage/pgadmin4:9.17`, pinned)
+
+Server mode. Accounts are pre-created by `add_user.sh` (internal auth; password = the
+person's DB password from `~/.pgpass` until Google sign-in is on). Servers **calcofi (CTD
+QA/QC)** and **gis (legacy 2022)** are registered under `ben@ecoquants.com` and *shared*, so
+everyone sees them and enters their own role name + password.
+
+**Enable Google sign-in (one-time, needs the Cloud Console UI — gcloud cannot create OAuth
+clients):**
+1. https://console.cloud.google.com/auth/overview?project=ucsd-sio-calcofi → Branding: app
+   name "CalCOFI pgAdmin", support email, authorized domain `calcofi.io`. Audience: **External**,
+   publishing status **Testing**, add the six emails as test users (so Betty's gmail works and
+   nobody else can sign in).
+2. Clients → Create client → Web application, name `pgadmin.calcofi.io`, authorized redirect
+   URI `https://pgadmin.calcofi.io/oauth2/authorize`. Copy client id + secret.
+3. On the server, in `/share/github/CalCOFI/server/.env` add
+   `PGADMIN_AUTH_SOURCES=['oauth2','internal']`, `PGADMIN_OAUTH2_CLIENT_ID=…`,
+   `PGADMIN_OAUTH2_CLIENT_SECRET=…`, then `docker compose up -d pgadmin`. The login page
+   gains a Google button; `OAUTH2_AUTO_CREATE_USER=False` keeps the allow-list (only the
+   pre-created emails can get in).
+Maintenance: `docker exec pgadmin /venv/bin/python3 /pgadmin4/setup.py get-users|add-user|update-user|dump-servers|load-servers`
+(9.17: `update-user` needs `--role`). Config db `/share/pgadmin/pgadmin4.db` (backed up to
+`gs://calcofi-backups/pgadmin/` by the nightly ship — TODO wire into backup.sh).
+
 ## Database backups (current: → GCS, since 2026-08-19)
 
 Three moving parts, all in this repo. The older "rclone to backup database dumps" and
@@ -441,7 +492,7 @@ chmod g+w -R /share/github
 chgrp -R staff /share/github
 ```
 
-## Add user
+## Add user (HISTORICAL 2022 manual procedure — use scripts/add_user.sh, see "Users" above)
 
 ```bash
 # set user and pass
