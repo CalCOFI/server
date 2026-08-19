@@ -61,7 +61,11 @@ services:
   # and ran with the 128 MB shared_buffers default on a 15 GB box.
   postgis:
     container_name: postgis
-    image: postgis/postgis:18-3.6
+    # postgis/postgis:18-3.6 + pg_duckdb (./postgis/Dockerfile); `docker compose build postgis`
+    # after editing the Dockerfile. Roll back: image postgis/postgis:18-3.6 (drop build:) and
+    # remove pg_duckdb from shared_preload_libraries.
+    image: calcofi-postgis:18-3.6-duckdb
+    build: ./postgis
     environment:
       POSTGRES_DB: gis
       POSTGRES_USER: admin
@@ -75,7 +79,8 @@ services:
         -c max_wal_size=4GB
         -c random_page_cost=1.1
         -c max_parallel_workers_per_gather=2
-        -c shared_preload_libraries=pg_stat_statements
+        -c shared_preload_libraries=pg_stat_statements,pg_duckdb
+        -c duckdb.postgres_role=calcofi_reader
         -c log_connections=on
         -c log_min_duration_statement=5s
         -c log_statement=ddl
