@@ -3,7 +3,7 @@
 -- Requires the calcofi-postgis:18-3.6-duckdb image, shared_preload_libraries=…,pg_duckdb and
 -- duckdb.postgres_role=calcofi_reader (compose). read_parquet() over https needs no credentials
 -- (the bucket is public). The release VERSION is pinned below — re-run after a new release is
--- promoted (deploy_consumers can do it). Views are small tables only; for the big ones
+-- promoted (scripts/deploy_consumers.sh in CalCOFI/workflows does this as its release-views step). Views are small tables only; for the big ones
 -- (obs, sample) query read_parquet() directly with a WHERE on the hive partition, or use DuckDB
 -- on your laptop (calcofi4r::cc_get_db() + cc_pg_attach()).
 CREATE EXTENSION IF NOT EXISTS pg_duckdb;
@@ -26,7 +26,8 @@ CREATE OR REPLACE VIEW release.ship AS
 
 CREATE OR REPLACE VIEW release.dataset AS
   SELECT r['dataset_key']::text AS dataset_key, r['dataset_name']::text AS dataset_name, r['provider']::text AS provider,
-         r['category']::text AS category, r['coverage_temporal_observed']::text AS coverage_temporal_observed
+         r['category']::text AS category, r['coverage_temporal']::text AS coverage_temporal,
+         r['coverage_spatial']::text AS coverage_spatial, r['link_calcofi_org']::text AS link_calcofi_org
   FROM read_parquet('https://storage.googleapis.com/calcofi-db/ducklake/releases/v2026.08.14/parquet/dataset.parquet') r;
 
 GRANT SELECT ON ALL TABLES IN SCHEMA release TO calcofi_reader;
