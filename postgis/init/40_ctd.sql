@@ -7,6 +7,7 @@
 --   ctd.scan         one row per scan line, EVERY source column verbatim (82 columns of the
 --                    calcofi.org db-CSV products, lower-cased), + file_id/row_num provenance — IMMUTABLE
 --   ctd.scan_column  what each column is (source header, description, units) — the data dictionary
+--   ctd.scan_issue   source cell text that could not be typed (scan cell is NULL), verbatim — IMMUTABLE
 --   ctd.qual_code    the flag vocabulary used in ctd.flag (IODE/SeaDataNet primary flags 0–9);
 --   ctd.source_qual_code  the source's own *Q column codes (0,1,2,8,9), for reference
 --   ctd.flag         the ledger: (scan|file) × variable × proposal; status proposed→accepted|rejected|withdrawn;
@@ -192,6 +193,27 @@ COMMENT ON TABLE ctd.scan IS 'Every scan line of every db-CSV cast file, every c
 CREATE INDEX IF NOT EXISTS scan_file_cast_depth_idx ON ctd.scan (file_id, cast_id, depth);
 CREATE INDEX IF NOT EXISTS scan_study_idx ON ctd.scan (study);
 
+-- ── ctd.scan_issue — source values that could not be typed, verbatim ────────────────────────
+-- "Every column verbatim" meets reality here: a handful of files carry text where a number
+-- belongs (bottle comments such as 'DIC' / 'POSSIBLY 85;LEAKY BTM VLV' in OxBuM of 1210NH,
+-- concatenations like '15.86-99.0' in 9803SP, 'NaN' in *Q flag columns). ctd.scan holds NULL
+-- for those cells; this table holds the original text, keyed to the exact cell, so nothing
+-- from the files is lost and the QC team can see (and flag) them. Immutable like ctd.scan.
+CREATE TABLE IF NOT EXISTS ctd.scan_issue (
+  issue_id    bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  file_id     int  NOT NULL REFERENCES ctd.file(file_id),
+  row_num     int  NOT NULL,
+  column_name text NOT NULL REFERENCES ctd.scan_column(column_name),
+  raw_value   text NOT NULL,
+  UNIQUE (file_id, row_num, column_name)
+);
+COMMENT ON TABLE ctd.scan_issue IS 'Source cell values that could not be typed into ctd.scan (kept verbatim; the scan cell is NULL). Join on (file_id, row_num).';
+CREATE OR REPLACE VIEW ctd.v_scan_issue AS
+  SELECT i.issue_id, s.scan_id, i.file_id, i.row_num, f.study, f.archive, f.path, s.cast_id, s.depth, i.column_name, i.raw_value
+  FROM ctd.scan_issue i JOIN ctd.file f USING (file_id)
+  LEFT JOIN ctd.scan s ON s.file_id = i.file_id AND s.row_num = i.row_num;
+COMMENT ON VIEW ctd.v_scan_issue IS 'ctd.scan_issue with the scan it belongs to (scan_id, cast, depth).';
+
 -- ── immutability guard (file, scan) ─────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION ctd.no_mutation() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -210,6 +232,10 @@ DROP TRIGGER IF EXISTS file_no_truncate ON ctd.file;
 CREATE TRIGGER file_no_truncate BEFORE TRUNCATE ON ctd.file FOR EACH STATEMENT EXECUTE FUNCTION ctd.no_mutation();
 DROP TRIGGER IF EXISTS scan_no_truncate ON ctd.scan;
 CREATE TRIGGER scan_no_truncate BEFORE TRUNCATE ON ctd.scan FOR EACH STATEMENT EXECUTE FUNCTION ctd.no_mutation();
+DROP TRIGGER IF EXISTS scan_issue_immutable ON ctd.scan_issue;
+CREATE TRIGGER scan_issue_immutable BEFORE UPDATE OR DELETE ON ctd.scan_issue FOR EACH ROW EXECUTE FUNCTION ctd.no_mutation();
+DROP TRIGGER IF EXISTS scan_issue_no_truncate ON ctd.scan_issue;
+CREATE TRIGGER scan_issue_no_truncate BEFORE TRUNCATE ON ctd.scan_issue FOR EACH STATEMENT EXECUTE FUNCTION ctd.no_mutation();
 
 -- ── flag vocabularies ───────────────────────────────────────────────────────────────────────
 -- The ledger uses the IODE / SeaDataNet primary-level flags — international, one digit, and
@@ -353,7 +379,7 @@ CREATE POLICY flag_review   ON ctd.flag FOR UPDATE TO calcofi_curator USING (tru
 
 -- ── privileges ──────────────────────────────────────────────────────────────────────────────
 GRANT SELECT ON ALL TABLES IN SCHEMA ctd TO calcofi_reader;
-GRANT INSERT ON ctd.file, ctd.scan TO calcofi_loader;
+GRANT INSERT ON ctd.file, ctd.scan, ctd.scan_issue TO calcofi_loader;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA ctd TO calcofi_loader;
 GRANT INSERT, UPDATE ON ctd.flag TO calcofi_writer;
 GRANT USAGE ON SEQUENCE ctd.flag_flag_id_seq TO calcofi_writer;
