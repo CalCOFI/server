@@ -29,3 +29,8 @@ last field is their database password. They copy that line into their laptop's `
 (Windows: `%APPDATA%\postgresql\pgpass.conf`) and everything (psql, R, Python, DuckDB,
 pgAdmin desktop) authenticates without ever typing it. `psql -c '\password'` rotates it.
 User-facing instructions: https://calcofi.io/docs/server-access.html
+
+**After an `rstudio` image rebuild**: `rstudio/add_users.sh` recreates the container users at
+build time with the shared `.env PASSWORD` and no `.pgpass`. Re-run
+`sudo scripts/add_user.sh --all` afterwards — it is idempotent and (re)sets each container
+account's RStudio password and `~/.pgpass` from the host copy.
