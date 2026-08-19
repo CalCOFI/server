@@ -99,7 +99,7 @@ clients):**
    pre-created emails can get in).
 Maintenance: `docker exec pgadmin /venv/bin/python3 /pgadmin4/setup.py get-users|add-user|update-user|dump-servers|load-servers`
 (9.17: `update-user` needs `--role`). Config db `/share/pgadmin/pgadmin4.db` (backed up to
-`gs://calcofi-backups/pgadmin/` by the nightly ship — TODO wire into backup.sh).
+`gs://calcofi-backups/pgadmin/` by the nightly ship).
 
 ## Database backups (current: → GCS, since 2026-08-19)
 

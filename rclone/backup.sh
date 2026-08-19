@@ -54,6 +54,11 @@ if [ -d "$SRC/manual" ]; then
   rclone copy "$SRC/manual" "$DST/manual" --skip-links --checksum --transfers 4 -v --stats-one-line
 fi
 
+# 3. pgAdmin's config db (users, shared servers) — small; bucket versioning keeps history
+if [ -f /share/pgadmin/pgadmin4.db ]; then
+  rclone copyto /share/pgadmin/pgadmin4.db "${DST%/postgres}/pgadmin/pgadmin4.db" -q && echo "[$(ts)] pgadmin4.db copied"
+fi
+
 # newest daily object per database, from the DESTINATION (what we actually have off-site)
 latest="$(rclone lsf "$DST/daily/" --files-only 2>/dev/null | grep -v -- '-latest' | sort | tail -n 5 | tr '\n' ' ')"
 size="$(rclone size "$DST" --json 2>/dev/null || echo '{"count":-1,"bytes":-1}')"
