@@ -63,6 +63,12 @@ services:
     ports:
       - 5432:5432
       
+  # Nightly pg_dump rotation to /share/pg_backups/{daily,weekly,monthly,last}. The LOCAL
+  # rotation is deliberately short (the ssd disk is 200 GB and stays that way — decision D6,
+  # 2026-08-19): gs://calcofi-backups/postgres is the long store (rclone/backup.sh ships it
+  # at 00:30 UTC, Object Versioning keeps 90 d of anything sync deletes), and
+  # scripts/pg_restore_drill.sh proves the off-site copy restores every week. Keep enough
+  # room for one dump + one restore of the largest DB; do not grow KEEP_* to "be safe".
   pg_backups:
     container_name: pg_backups
     image: prodrigestivill/postgres-backup-local:17
@@ -77,21 +83,26 @@ services:
       - postgis
     environment:
       - POSTGRES_HOST=postgis
-      - POSTGRES_DB=gis
+      - POSTGRES_DB=gis            # comma/space list; `calcofi` is added when that DB exists (WS2)
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=${PASSWORD}
       - POSTGRES_EXTRA_OPTS=-Z6 --blobs
       - SCHEDULE=@daily
       #- SCHEDULE='0 19 * * * *'
-      - BACKUP_KEEP_DAYS=7
-      - BACKUP_KEEP_WEEKS=4
-      - BACKUP_KEEP_MONTHS=6
+      - BACKUP_KEEP_DAYS=3
+      - BACKUP_KEEP_WEEKS=2
+      - BACKUP_KEEP_MONTHS=2
       - HEALTHCHECK_PORT=8000
 
   rclone:
     build: ./rclone
     container_name: rclone
     restart: unless-stopped
+    environment:
+      # optional dead-man's switch pinged by rclone/backup.sh after a successful ship
+      # (e.g. a healthchecks.io check URL). Empty = skip. The always-on monitor is the
+      # upptime check on https://file.calcofi.io/status/pg_backup.ok (scripts/backup_status.sh).
+      - HEALTHCHECKS_URL=${HEALTHCHECKS_URL:-}
     logging:
       driver: 'json-file'
       options:

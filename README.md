@@ -50,6 +50,42 @@ replaces the default base entirely and is parsed with stricter flags, failing on
 On an ERDDAP image upgrade, re-derive `messages.xml` from the new default and
 re-apply the `startBodyHtml5` block.
 
+## Database backups (current: → GCS, since 2026-08-19)
+
+Three moving parts, all in this repo. The older "rclone to backup database dumps" and
+"Database backups" sections further down are the **Google Drive era** and are kept as
+history only — that path failed silently every night from 2025-02-02 (Drive quota) until
+it was replaced; do not point anything back at `remote:db_backups`.
+
+| piece | where it runs | what |
+|---|---|---|
+| `pg_backups` service | container, `@daily` 00:00 UTC | `pg_dump -Z6 --blobs` of each DB in `POSTGRES_DB` → `/share/pg_backups/{daily,weekly,monthly,last}`; **short** local rotation (3 d / 2 w / 2 m — the 200 GB `ssd` is not growing, decision D6) |
+| `rclone/backup.sh` | `rclone` container cron, 00:30 UTC | `rclone sync /share/pg_backups → gs://calcofi-backups/postgres` (excludes `last/`, `*-latest` symlinks, `_old`, `_drill`); writes `_status/last_success.json` locally and to the bucket; optional `HEALTHCHECKS_URL` ping |
+| `scripts/pg_restore_drill.sh` | host root cron, Sun 03:15 UTC | fetches the newest daily dump **from GCS**, restores into `<db>_drill`, compares table + row counts with live, drops it, writes `_status/last_drill.json` |
+| `scripts/backup_status.sh` | host root cron, hourly | folds both status files into `https://file.calcofi.io/status/pg_backup.json` and the `pg_backup.ok` flag that the `CalCOFI/uptime` check **db-backup** watches (200 = healthy, 404 = backup > 36 h or drill > 10 d / failed) |
+| `scripts/setup_backup_bucket.sh` | laptop, once | the bucket: private, uniform access, **Object Versioning on**, noncurrent versions deleted after 90 d, monthly/manual/legacy → Nearline at 30 d; `calcofi-admin` SA has objectAdmin on it only |
+
+Bucket layout: `postgres/{daily,weekly,monthly}/` (mirror), `postgres/manual/<date>/`
+(pre-upgrade `globals.sql` + `<db>.dump` custom-format), `postgres/legacy-2022/` (the two
+2022 `.sql` that used to sit in the *public* `gs://calcofi-db/`), `postgres/legacy-2024/`
+(the old `_old/` dumps), `postgres/_status/`, `pgadmin/`.
+
+```bash
+# is last night's backup off-site?            (either side)
+docker exec rclone rclone cat gcs-calcofi-sa:calcofi-backups/postgres/_status/last_success.json
+cat /share/pg_backups/_status/last_success.json
+curl -s https://file.calcofi.io/status/pg_backup.json
+
+# run the pieces by hand
+docker exec rclone /backup.sh                         # ship now
+sudo /share/github/CalCOFI/server/scripts/pg_restore_drill.sh   # prove the off-site copy restores (~10 min for gis)
+sudo /share/github/CalCOFI/server/scripts/backup_status.sh
+
+# root crontab lines (sudo crontab -e)
+# 15 3 * * 0 /share/github/CalCOFI/server/scripts/pg_restore_drill.sh >> /share/logs/pg_restore_drill.log 2>&1
+# 7  * * * * /share/github/CalCOFI/server/scripts/backup_status.sh
+```
+
 ## Restore database from `.sql.gz` backup
 
 The `pg_backups` container produces gzipped plain-SQL dumps (`.sql.gz`), not
@@ -141,7 +177,7 @@ docker run --rm -it \
     config
 ```    
 
-## rclone to backup database dumps
+## rclone to backup database dumps (HISTORICAL — Google Drive era, replaced 2026-08-19; see "Database backups (current)")
 
 https://rclone.org/install/#docker
 
@@ -607,7 +643,7 @@ pg_restore --verbose --create --dbname=gis $dump
 ```
 
 
-## Database backups
+## Database backups (HISTORICAL — host-cron → Google Drive, 2022; replaced 2026-08-19; see "Database backups (current)")
 
 ### `rclone`: install and configure 
 

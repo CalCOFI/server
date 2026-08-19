@@ -19,7 +19,7 @@ set -euo pipefail
 
 PROJECT="ucsd-sio-calcofi"
 SA_EMAIL="calcofi-admin@${PROJECT}.iam.gserviceaccount.com"
-BUCKETS=(calcofi-files-public calcofi-files-private calcofi-db)
+BUCKETS=(calcofi-files-public calcofi-files-private calcofi-db calcofi-backups)
 DRIVE_FOLDER_ID="1KYo8-WiWpdYcvHU8CBPvPhJdJdOym0oW"   # "CalCOFI Data Folder"
 
 # where to store the SA key (chmod 600). On a Linux server prefer /etc/rclone/.

@@ -1,3 +1,4 @@
+# pg dump rotation -> gs://calcofi-backups/postgres (see backup.sh); pg_backups dumps at 00:00 UTC
 30 0 * * * /backup.sh >> /share/logs/rclone 2>&1
 0 2 * * * /gdrive_to_gcs.sh public >> /share/logs/gdrive_to_gcs 2>&1
 # enable once data-private/ is populated:
