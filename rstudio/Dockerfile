@@ -4,6 +4,13 @@ FROM rocker/geospatial:latest
 RUN /rocker_scripts/install_shiny_server.sh
 RUN /rocker_scripts/install_python.sh
 
+# calcofi4py into /opt/venv — the Python that RStudio's reticulate console uses, i.e. where
+# the CTD team runs the calcofi4py examples. Baked here so an image rebuild ships it; between
+# rebuilds it is upgraded in place by calcofi4py's scripts/deploy_server.sh after every
+# version bump (pip into a running container survives restarts, not rebuilds).
+RUN /opt/venv/bin/pip install --no-cache-dir \
+  "calcofi4py[viz] @ git+https://github.com/CalCOFI/calcofi4py"
+
 # https://github.com/CalCOFI/apps
 #   https://github.com/CalCOFI/apps/blob/main/libs/db.R
 #   https://github.com/CalCOFI/apps/blob/main/oceano/global.R
