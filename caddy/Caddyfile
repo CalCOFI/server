@@ -132,33 +132,45 @@ shiny.calcofi.io {
 app.calcofi.io {
 	@hex_old path /db-viz-hex /db-viz-hex/*
 	handle @hex_old {
-		uri strip_prefix /db-viz-hex
-		redir * /hex{uri} 308
+		route {
+			uri strip_prefix /db-viz-hex
+			redir * /hex{uri} 308
+		}
 	}
 	@int_old path /int /int/*
 	handle @int_old {
-		uri strip_prefix /int
-		redir * /hex{uri} 308
+		route {
+			uri strip_prefix /int
+			redir * /hex{uri} 308
+		}
 	}
 	@intapp_old path /int-app /int-app/*
 	handle @intapp_old {
-		uri strip_prefix /int-app
-		redir * /hex{uri} 308
+		route {
+			uri strip_prefix /int-app
+			redir * /hex{uri} 308
+		}
 	}
 	@cruise_old path /db-viz-cruise /db-viz-cruise/*
 	handle @cruise_old {
-		uri strip_prefix /db-viz-cruise
-		redir * /cruise{uri} 308
+		route {
+			uri strip_prefix /db-viz-cruise
+			redir * /cruise{uri} 308
+		}
 	}
 	@datacheck_old path /datacheck /datacheck/*
 	handle @datacheck_old {
-		uri strip_prefix /datacheck
-		redir * /cruise{uri} 308
+		route {
+			uri strip_prefix /datacheck
+			redir * /cruise{uri} 308
+		}
 	}
 	@contour_old path /oceano /oceano/*
 	handle @contour_old {
-		uri strip_prefix /oceano
-		redir * /contour{uri} 308
+		route {
+			uri strip_prefix /oceano
+			redir * /contour{uri} 308
+		}
 	}
 
 	# Station Explorer (db-viz-station) — static, not Shiny. Canonical home
@@ -166,9 +178,9 @@ app.calcofi.io {
 	# Pages, whose index.html now bounces old-host visitors here). Served
 	# from the same /share/static symlink static.calcofi.io uses:
 	#   /share/static/db-viz-station -> /share/github/CalCOFI/db-viz-station/public
-	# Freshness comes from the root-crontab git pull of that clone (Pages
-	# deploys and the weekly data refresh land as commits on main) — see
-	# `sudo crontab -l`.
+	# Freshness comes from bebest's crontab git pull of that clone every
+	# 30 min (Pages deploys and the weekly data refresh land as commits on
+	# main) — see `crontab -l` as bebest.
 	redir /station /station/ 308
 	handle_path /station/* {
 		root * /share/static/db-viz-station
