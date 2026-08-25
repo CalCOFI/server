@@ -72,6 +72,12 @@ Disallow: /*.gz$
 	@public path_regexp bucket ^/(calcofi-db|calcofi-files-public|calcofi-projects)(/|$)
 	handle @public {
 		# folder URL -> the index.html object standing in for a listing
+		# legacy release-parquet path -> canonical content-addressed object
+		# (generated; see the 404 handler below). Empty default = no redirect.
+		map {path} {canon} {
+			import releases_redirects.caddy
+			default ""
+		}
 		@dir path_regexp dir ^(.*)/$
 		rewrite @dir {re.dir.1}/index.html
 		reverse_proxy https://storage.googleapis.com {
@@ -91,6 +97,18 @@ Disallow: /*.gz$
 			handle_response @nc_missing {
 				@is_nc path_regexp ncpath ^/calcofi-files-public/netcdf/([^/]+)/([^/]+)/[^/]+\.nc$
 				redir @is_nc https://storage.calcofi.io/calcofi-files-public/netcdf/{re.ncpath.1}/{re.ncpath.2}/ 302
+				# Database release parquet is content-addressed since v2026.09
+				# (CalCOFI/workflows .claude/plans/2026-08-25 …): the bytes live
+				# under ducklake/tables/{table}/{content_hash}/…, and a release's
+				# legacy path releases/{v}/parquet/{table}.parquet has a real
+				# "compat" object only for the promoted and consolidated versions.
+				# For every other version the legacy path 404s on GCS, and this
+				# map — generated from each release's catalog.json by
+				# workflows/scripts/build_release_redirects.R, imported below —
+				# sends it straight to the canonical object on GCS (a 302, so the
+				# bytes never transit this VM). Consulted on 404 only.
+				@canon expression `{canon} != ""`
+				redir @canon {canon} 302
 				respond "Not found." 404
 			}
 		}
