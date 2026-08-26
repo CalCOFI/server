@@ -11,7 +11,7 @@ rstudio.calcofi.io works with `host = "postgis"` and no tunnel.
 
 | column | meaning |
 |---|---|
-| `username` | email local-part (Betty: `bhuang`, not `bhuang0022`); also the DB role name and the personal schema |
+| `username` | local-part of their `@ucsd.edu` email (`bthuang`, not the `bhuang0022` of an older gmail); also the DB role name and the personal schema |
 | `uid` | fixed, so host and container agree on file ownership under `/share` (1001–1003 are Marina/Ed/Ben from 2022; OS Login users have huge uids) |
 | `pg_roles` | semicolon list of group roles: `calcofi_writer` (scratch + propose flags), `calcofi_curator` (+ accept/reject), `calcofi_admin` (Ben) |
 | `rstudio` | `yes` = also create the account inside the rstudio container (remember to add the row to `rstudio/users.csv` so an image rebuild recreates it) |
