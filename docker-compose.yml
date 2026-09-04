@@ -271,7 +271,7 @@ services:
       #  - logo served at /erddap/images/calcofi.svg (legacy; the header now
       #    hotlinks the brand logo pair from calcofi.io)
       #  - messages.xml overrides <startHeadHtml5> (favicons, theme.css/js, title)
-      #    and <startBodyHtml5> (the .cc-header) — https://calcofi.io/brand/v1/
+      #    and <startBodyHtml5> (the .cc-header) — https://calcofi.io/brand/v2/
       # NOTE: a content/erddap/messages.xml does NOT work in ERDDAP 2.30.0 (it
       # replaces the default base and is parsed with stricter flags), so the
       # edited file is mounted over the classpath messages.xml instead. It is a
