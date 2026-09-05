@@ -457,9 +457,15 @@ TODO:
 In Terminal on Mac:
 
 ```bash
-gcloud auth login # choose bebest@ucsd.edu
+# authenticate ONCE as the calcofi-admin service account (a key never expires, so no
+# `gcloud auth login` every few days — on the laptop or on the server); the key lives
+# in Drive under private/ and must be copied to the server by hand, never committed
+gcloud auth activate-service-account \
+  --key-file="$HOME/Library/CloudStorage/GoogleDrive-ben@ecoquants.com/My Drive/private/2026-06-07 ucsd-sio-calcofi_36230b2795e6_calcofi-admin-sa.json"
 gcloud config set project ucsd-sio-calcofi
 gcloud compute ssh shiny-server
+# if a compute command is refused under the service account, that action still needs
+# a user: `gcloud config set account bebest@ucsd.edu` (after a one-time `gcloud auth login`)
 ```
 
 Connected to shiny-server:
