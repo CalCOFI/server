@@ -143,7 +143,7 @@ shiny.calcofi.io {
 # inside the rstudio container's /srv/shiny-server (a named volume):
 #   docker exec rstudio ln -sfn /share/github/CalCOFI/db-viz-hex/app        /srv/shiny-server/hex
 #   docker exec rstudio ln -sfn /share/github/CalCOFI/apps/db-viz-cruise    /srv/shiny-server/cruise
-#   docker exec rstudio ln -sfn /share/github/CalCOFI/apps/oceano           /srv/shiny-server/contour
+#   (the /contour symlink to apps/oceano is retired — see the @contour redirect below)
 # (/hex previously pointed at the 2023 dev app apps_dev/hex_density, retired.)
 # Old paths 308 below so deep links keep working, query strings included —
 # {uri} carries the remaining path AND the query after strip_prefix.
@@ -189,6 +189,13 @@ app.calcofi.io {
 			uri strip_prefix /oceano
 			redir * /contour{uri} 308
 		}
+	}
+	# Contour Explorer (apps/oceano, Shiny over the legacy PostgreSQL) RETIRED 2026-09-07: the Explorer's Contours
+	# lens replaces it — kriging / IDW / spline in the browser with an error surface (workflows plan 2026-09-07,
+	# D31; Ben: "let's finally retire the old contour app"). /contour and /oceano land on that lens.
+	@contour path /contour /contour/*
+	handle @contour {
+		redir * "https://calcofi.io/explore/?lens=contour&var=temperature" 308
 	}
 
 	# Station Explorer (db-viz-station) — static, not Shiny. Canonical home
