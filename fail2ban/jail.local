@@ -1,0 +1,26 @@
+# CalCOFI shiny-server — see INCIDENTS.md and README "Security posture".
+#
+# Why this is here and why it is NOT a firewall rule: sshd is key-only
+# (PasswordAuthentication no, PermitRootLogin no), so the constant brute-force
+# traffic cannot succeed — it is log noise, not exposure. Restricting port 22 by
+# source range was considered and rejected: collaborators connect from dynamic
+# residential and field addresses (UCSD 137.110.x, home ISPs), so a source
+# allowlist locks out the people who need SFTP. fail2ban drops the repeat
+# offenders without changing anyone's access.
+#
+# Legitimate users authenticate by key and produce no auth failures, so they are
+# not at risk of a ban. A user with a missing/wrong key can trip it; bantime is
+# deliberately short so that self-heals.
+
+[DEFAULT]
+# never ban loopback or anything inside the VPC (GCP metadata, containers)
+ignoreip  = 127.0.0.1/8 ::1 10.128.0.0/9 172.16.0.0/12
+bantime   = 1h
+findtime  = 10m
+maxretry  = 5
+backend   = systemd
+
+[sshd]
+enabled   = true
+port      = ssh
+mode      = aggressive
