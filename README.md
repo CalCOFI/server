@@ -124,6 +124,53 @@ Details in [`users/README.md`](users/README.md). The older "Add user" section be
 Shared folder for the CTD team: `/share/data/ctd/{incoming,archive,exports}` (`root:calcofi`,
 setgid 2775; `/etc/profile.d/calcofi.sh` sets `umask 002` for members).
 
+## Security posture
+
+Audited 2026-09-08 alongside the outage in [INCIDENTS.md](INCIDENTS.md): every
+blob on every ref of all CalCOFI repos, both GCS buckets anonymously, the GitHub
+Actions workflows and org commit authorship. **No CalCOFI credential was found
+exposed**, and there was no sign of compromise.
+
+What holds the line today:
+
+- **Secrets never enter git.** Every one is referenced (`$PASSWORD`,
+  `${ERDDAP_flagKeyKey}`, `${{ secrets.* }}`, `Sys.getenv()`), never literal;
+  `.env` is gitignored and has never been committed. Keep it that way — this repo
+  is **public**.
+- **Secret scanning + push protection** are enabled on all public CalCOFI repos
+  (2026-09-08). Push protection refuses a commit containing a recognised
+  credential, so a slip is caught before it is published rather than after.
+- **`calcofi-admin` is deliberately under-privileged**: object-level GCS only, no
+  `compute.*`, no bucket admin. This is why a VM reset needs
+  `gcloud auth login bebest@ucsd.edu` (see "Google instance"). Resist the urge to
+  widen the service account to make an ops task convenient — that scoping is what
+  bounds the blast radius if the key leaks.
+- **sshd is key-only** (`PasswordAuthentication no`, `PermitRootLogin no`,
+  `KbdInteractiveAuthentication no`). The constant brute-force traffic in the
+  journal therefore cannot succeed; it is noise.
+
+Two things that look like gaps and are **deliberate** — check here before
+"fixing" either:
+
+- **Port 22 is open to the internet, on purpose.** A source-range allowlist was
+  considered and rejected: collaborators SSH/SFTP in from dynamic residential and
+  field addresses, so an allowlist locks out the people who need access, and IAP
+  tunnelling would break SFTP for them. With key-only auth the exposure is log
+  noise. `fail2ban` is the proportionate mitigation if the noise becomes a
+  problem — not a firewall rule.
+- **`gs://calcofi-db` is anonymously listable, and must stay that way.**
+  `allUsers` holds `roles/storage.objectViewer`, which bundles
+  `storage.objects.list` with `.get`. Downgrading it to
+  `roles/storage.legacyObjectReader` would stop bucket enumeration — and would
+  **silently break every documented read of every release before v2026.09**,
+  which `docs/data-access.qmd` tells users to fetch with an anonymous s3-style
+  glob (`read_parquet('s3://calcofi-db/…/obs/**/*.parquet')`); a glob needs
+  `list`. `calcofi4r`, `calcofi4py` and `db-query` return that form automatically
+  for those versions. The bucket holds only published data — 27,434 objects, none
+  secret-shaped — so enumeration costs nothing. If the exposure of the internal
+  `ducklake-staging/`, `explore-dev-root/` and `pg/` prefixes ever matters, the
+  fix is to **move those prefixes to a private bucket**, not to remove `list`.
+
 ## pgAdmin — https://pgadmin.calcofi.io (`dpage/pgadmin4:9.17`, pinned)
 
 Server mode. Accounts are pre-created by `add_user.sh` (internal auth; password = the
