@@ -519,11 +519,40 @@ TODO:
 - Creation time: Jul 6, 2022
 - Zone: us-central1-a
 - Machine configuration
-  - Machine type: e2-medium
+  - Machine type: **n2-standard-4** (4 vCPU, 16 GB) — *was* e2-medium at creation
 - Networking
   - Public DNS PTR Record: calcofi.io.
+  - External IP **34.123.163.255**, the reserved static address `shiny-server-ip`,
+    so it survives both a reset and a stop/start — DNS does not need touching.
 - Storage
-  - 20 GB SCSI
+  - boot `shiny-server`, **40 GB pd-balanced**, mounted `/`
+  - data `ssd`, **200 GB pd-ssd**, mounted `/ssd`
+
+The machine type sets the disk-throughput ceiling, which matters more than it
+looks: n2-standard-4 caps around **251.7 MB/s** read, and a flat line at exactly
+that value in Cloud Monitoring means the box is stuck against the cap rather than
+busy. That is how the 2026-09-08 outage was identified — see
+[INCIDENTS.md](INCIDENTS.md).
+
+### Rebuilding the host
+
+Everything that serves traffic is in `docker-compose.yml`, so it comes back with
+`docker compose up`. The pieces that run on the **host** are invisible to that
+and would be silently lost, so they live in
+[`scripts/setup_host.sh`](scripts/setup_host.sh):
+
+```bash
+ssh calcofi
+cd /share/github/CalCOFI/server && git pull
+sudo ./scripts/setup_host.sh
+```
+
+It is idempotent, so it is also how you re-assert host config after someone edits
+a file on the box instead of in git. Currently covers `fail2ban`; its header
+carries the inventory of what else is host-level (root crontab, user accounts,
+docker + git) so the next addition has an obvious home. **Run it after creating a
+VM from a machine image too** — an image captures whatever was installed when it
+was taken, which is not necessarily what git says now.
 
 ## Google instance
 
