@@ -156,8 +156,11 @@ Two things that look like gaps and are **deliberate** — check here before
   considered and rejected: collaborators SSH/SFTP in from dynamic residential and
   field addresses, so an allowlist locks out the people who need access, and IAP
   tunnelling would break SFTP for them. With key-only auth the exposure is log
-  noise. `fail2ban` is the proportionate mitigation if the noise becomes a
-  problem — not a firewall rule.
+  noise. **`fail2ban` is installed** (2026-09-08) as the proportionate
+  mitigation — config in [`fail2ban/jail.local`](fail2ban/), 5 failures in 10 min
+  → 1 h ban — rather than a firewall rule. If a user reports being locked out,
+  check `sudo fail2ban-client get sshd banned` **before** diagnosing it as
+  anything else.
 - **`gs://calcofi-db` is anonymously listable, and must stay that way.**
   `allUsers` holds `roles/storage.objectViewer`, which bundles
   `storage.objects.list` with `.get`. Downgrading it to
