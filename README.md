@@ -1,6 +1,12 @@
 # server
 calcofi.io server setup for R Shiny apps, RStudio IDE, R Plumber API, temporary PostGIS database, pg_tileserv
 
+> **Outages and post-mortems: [INCIDENTS.md](INCIDENTS.md).** Read it before
+> debugging an unreachable server — it has the off-box diagnostic order that
+> works while the box is down, and explains why *"ports open but nothing
+> answers"* means wedged rather than down. Most recent: 2026-09-08, a single
+> unconstrained ERDDAP request wedged the whole VM for 5 h 40 m.
+
 ## Shiny apps (`app.calcofi.io`)
 
 Shiny apps are served by `shiny-server` in the `rstudio` container from the
@@ -33,6 +39,36 @@ one-shot service in `docker-compose.yml` self-heals this by cloning the config i
 `setup.xml` must be the *complete* ERDDAP default — a minimal file is rejected at
 startup because ERDDAP requires `categoryAttributes`, `admin*`, `accessConstraints`,
 `fees`, `keywords`, `flagKeyKey`, and the logo-file settings to be present.
+
+### Unconstrained bulk downloads are refused
+
+`caddy/Caddyfile` refuses a `tabledap`/`griddap` data request that carries **no
+query string** (the `@bulk_data` matcher) with a 403 that explains how to
+constrain it. `tabledap/{dataset}.json` with no query means "the whole table",
+and on 2026-09-08 one such request from a crawler wedged the entire VM for
+5 h 40 m — ERDDAP does not stop building a response when the client
+disconnects. Full write-up: [INCIDENTS.md](INCIDENTS.md).
+
+Metadata outputs (`.das`, `.dds`, `.fgdc`, `.iso19115`, `.html`, `.graph`,
+`.subset`, `.ncHeader`, `.nccsvMetadata`) are unaffected, and so is any request
+with a query string. If a user reports a 403 on a bulk download, the answer is
+to add a column list and a bound, or to point them at the release Parquet —
+not to remove the guard.
+
+After editing the Caddyfile, **validate before reloading**:
+
+```bash
+# on the server, in a scratch copy so a bad edit never reaches the live config
+mkdir -p /share/tmp/caddy-cand && cp caddy/*.caddy caddy/Caddyfile /share/tmp/caddy-cand/
+docker exec -w /share/tmp/caddy-cand caddy \
+  caddy validate --adapter caddyfile --config /share/tmp/caddy-cand/Caddyfile
+# then, only if it says "Valid configuration":
+docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
+Gotcha: a backtick inside a backtick-quoted `respond` body silently ends the
+string and the error surfaces hundreds of lines later. `caddy validate` catches
+it; a reload without validating takes the site down.
 
 ### CalCOFI header / logo
 

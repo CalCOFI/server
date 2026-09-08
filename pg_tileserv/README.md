@@ -7,7 +7,14 @@ Run with these steps: Build, Run, Load Vector Data, and run the
 standard web-viewer examples like [Leaflet](../leaflet/leaflet-tiles.html).
 
 We use a [docker-compose.yml file](docker-compose.yml) with environment settings in
-[pg_tileserv.env](pg_tileserv.env) and [pg.env](pg.env) for `pg_tileserv` and the PG database.
+`pg_tileserv.env` and `pg.env` for `pg_tileserv` and the PG database.
+
+> **CalCOFI note.** `pg_tileserv.env` and `pg.env` were removed from this repo on
+> 2026-09-08: they are upstream's example files and carried a literal
+> `tileserv:tileserv` credential, which trips secret scanning. Nothing here runs
+> them — CalCOFI's `pg_tileserv` is started by the repo-root `docker-compose.yml`,
+> which passes `DATABASE_URL` from the gitignored `.env`. To run this standalone
+> upstream demo, recreate the two files from the upstream repository.
 
 ## Build
 

@@ -250,6 +250,44 @@ erddap.calcofi.io {
 		header Content-Type "text/plain; charset=utf-8"
 		respond `# Catalog pages: crawl away. Data requests: please do not —
 # they are generated from forms and are effectively infinite.
+#
+# The named agents below are blocked outright: bulk scrapers and AI-training
+# crawlers that take the catalog's cost without sending readers back to it.
+# Search engines are deliberately NOT in this list — being findable is the
+# point of publishing a catalog, so they fall through to the wildcard rules
+# and keep the metadata pages while the data outputs stay disallowed.
+#
+# Note this file is advisory: the crawler that caused the 2026-09-08 outage
+# ignored it and spoofed a browser UA. The enforced rule is the @bulk_data
+# matcher in the Caddyfile; this list only reduces the well-behaved noise.
+User-Agent: meta-externalagent
+User-Agent: Meta-ExternalAgent
+User-Agent: meta-externalfetcher
+User-Agent: FacebookBot
+User-Agent: GPTBot
+User-Agent: ChatGPT-User
+User-Agent: OAI-SearchBot
+User-Agent: ClaudeBot
+User-Agent: Claude-Web
+User-Agent: anthropic-ai
+User-Agent: CCBot
+User-Agent: Bytespider
+User-Agent: PerplexityBot
+User-Agent: Google-Extended
+User-Agent: Applebot-Extended
+User-Agent: Amazonbot
+User-Agent: cohere-ai
+User-Agent: Diffbot
+User-Agent: ImagesiftBot
+User-Agent: omgili
+User-Agent: Timpibot
+User-Agent: YouBot
+User-Agent: SemrushBot
+User-Agent: AhrefsBot
+User-Agent: MJ12bot
+User-Agent: DotBot
+Disallow: /
+
 User-Agent: *
 Crawl-delay: 10
 Disallow: /erddap/files/
@@ -280,6 +318,48 @@ Disallow: /*.small*
 Disallow: /*.transparentPng*
 Sitemap: https://erddap.calcofi.io/erddap/sitemap.xml
 ` 200
+	}
+
+	# Unconstrained bulk dumps — the 2026-09-08 outage. At 03:27:03 UTC a crawler
+	# (57.141.4.40, Meta range, spoofing a Mac browser UA) asked for
+	# /erddap/tabledap/calcofi_ctd-cast_full.json with NO query string, i.e. the
+	# whole of the largest table. It gave up after 24.9 s — Caddy logged
+	# `status=0, 0 bytes` — but ERDDAP does NOT cancel the underlying query when
+	# the client disconnects, so it kept materializing the table. The working set
+	# blew past 16 GB into file-backed pages, which are reclaimable, so the OOM
+	# killer never fired: the box pinned at its 251.7 MB/s disk-read ceiling with
+	# writes at zero for 5 h 40 m and had to be hard-reset. robots.txt below
+	# already disallowed `*.json*`; robots.txt is advisory and this client ignored
+	# it, so the rule has to be enforced here.
+	#
+	# Matches DATA outputs only, anchored with `$` so the metadata siblings still
+	# pass: .das .dds .fgdc .iso19115 .html .graph .subset .ncHeader
+	# .nccsvMetadata. No User-Agent exemption on purpose — the UA that took the
+	# server down was a spoofed browser, so trusting UA would have let it through.
+	# Constrained requests (any query string) are untouched; none of our own
+	# consumers request a bare dump, they all link the .html pages.
+	@bulk_data path_regexp bulk ^/erddap/(tabledap|griddap)/[^/]+\.(asc|csv|csvp|csv0|dataTable|dods|esriCsv|geoJson|htmlTable|itx|json|jsonlCSV|jsonlCSV1|jsonlKVP|mat|nc|ncCF|ncCFMA|nccsv|ncoJson|odvTxt|parquet|parquetWMeta|timeGaps|tsv|tsvp|tsv0|wav|xhtml)$
+	handle @bulk_data {
+		@unconstrained expression {http.request.uri.query} == ""
+		handle @unconstrained {
+			header Content-Type "text/plain; charset=utf-8"
+			respond `403 — an unconstrained full-table download is not available here.
+
+A request for a whole dataset with no query string can take the server down, so
+it is refused. Two supported ways to get the same data:
+
+1. Constrain the request. Add a column list and at least one bound, e.g.
+     /erddap/tabledap/{dataset}.csv?time,latitude,longitude,depth_m&time>=2020-01-01
+   Build one interactively from the dataset page:
+     https://erddap.calcofi.io/erddap/tabledap/{dataset}.html
+
+2. For bulk or whole-table work, use the release Parquet instead — it is faster,
+   versioned and citable: https://calcofi.io/docs
+
+Questions: https://github.com/CalCOFI/workflows/issues
+` 403
+		}
+		reverse_proxy erddap:8080
 	}
 
 	handle {
