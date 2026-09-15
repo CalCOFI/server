@@ -295,6 +295,10 @@ services:
       # generates a new random value on every restart, invalidating dataset
       # reload flag URLs and email-subscription keys.
       ERDDAP_flagKeyKey: ${ERDDAP_flagKeyKey}
+      # CORS so browser clients (DuckDB-WASM, fetch) can read griddap/tabledap
+      # outputs directly; off by default since ERDDAP 2.27. Leave corsAllowOrigin
+      # unset: "*" is treated as a literal origin and denied (verified on 2.31).
+      ERDDAP_enableCors: "true"
       ERDDAP_bigParentDirectory: /erddapData/
       ERDDAP_adminInstitution: CalCOFI
       ERDDAP_adminInstitutionUrl: https://calcofi.io
