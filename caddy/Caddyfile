@@ -206,9 +206,18 @@ app.calcofi.io {
 	# Freshness comes from bebest's crontab git pull of that clone every
 	# 30 min (Pages deploys and the weekly data refresh land as commits on
 	# main) — see `crontab -l` as bebest.
+	#
+	# Cache-Control: no-cache means "revalidate by ETag before reuse", not "do
+	# not store": a returning browser asks, gets 304 when nothing changed and
+	# the new bytes when the 30-minute pull brought any. Without a header,
+	# browsers apply heuristic freshness (a fraction of the file's age), and
+	# index.html's hand-typed ?v=118 stayed the same URL across a new app.js, so
+	# v2026.10.01's app.js (db-viz-station#16) never reached returning
+	# browsers. This one header replaces the version counter as the mechanism.
 	redir /station /station/ 308
 	handle_path /station/* {
 		root * /share/static/db-viz-station
+		header Cache-Control "no-cache"
 		encode zstd gzip
 		file_server
 	}
@@ -226,6 +235,10 @@ app.calcofi.io {
 #   sudo ln -s /share/github/CalCOFI/2026-ucsb-station-data-portal/public /share/static/station-portal
 static.calcofi.io {
 	root * /share/static
+	# same revalidate-by-ETag rule as app.calcofi.io/station/ for the twin copy
+	# of db-viz-station (see the comment there); other apps keep their defaults.
+	@station path /db-viz-station /db-viz-station/*
+	header @station Cache-Control "no-cache"
 	encode zstd gzip
 	file_server browse
 }
