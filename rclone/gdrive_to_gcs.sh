@@ -37,10 +37,15 @@ echo "[$(date '+%F %T')] gdrive->gcs ${BUCKET_TYPE}: ${SRC} -> ${SYNC} (archive 
 # expanded contents (the ctd ingest sources the zips, not loose files).
 # calcofi/genomics (raw eDNA FASTQ reads, ~46 GB) is archived on the Shared Drive
 # but read by no ingest, so it stays out of the public bucket.
+# shortcuts are followed (the CTD up/downcast databases and the SIO PIC DB files
+# are shortcuts to folders their owners keep); a shortcut whose target the service
+# account cannot read is skipped, since one such file fails the run and blocks
+# every deletion (2026-10-06: a .accdb shortcut owned by rswalethorp).
 rclone sync "${SRC}" "${SYNC}" \
   --checksum \
   --backup-dir "${ARCHIVE}" \
   --drive-export-formats csv \
+  --drive-skip-dangling-shortcuts \
   --exclude ".DS_Store" --exclude "*.tmp" --exclude "~*" \
   --exclude "calcofi/ctd-cast/download/*/**" \
   --exclude "calcofi/genomics/**" \
