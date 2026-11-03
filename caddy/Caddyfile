@@ -125,6 +125,18 @@ Start here: https://storage.calcofi.io/
 	}
 }
 
+# Private dataset previews: the calcofi-preview Cloud Run service (CalCOFI/workflows
+# preview/, link mode) under a branded host, preview.calcofi.io/<dataset>/<token>/.
+# Reverse-proxied, not redirected, so the link a provider holds stays on this host;
+# Cloud Run routes by its own hostname, hence header_up Host. The bytes transit this
+# VM, but a reviewer reads pages and a few tens of MB of parquet, nothing like the
+# bulk pulls storage.calcofi.io sees. Nothing here is for search engines.
+preview.calcofi.io {
+	header X-Robots-Tag "noindex, nofollow"
+	reverse_proxy https://calcofi-preview-199066946721.us-west1.run.app {
+		header_up Host calcofi-preview-199066946721.us-west1.run.app
+	}
+}
 pgadmin.calcofi.io {
 	reverse_proxy pgadmin:8088
 }
