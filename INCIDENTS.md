@@ -125,3 +125,42 @@ reset and a stop/start.
   deliberately not done.
 - Stock `caddy:latest` has no rate-limiting module. Per-IP limits would need a
   custom image (`caddy-ratelimit`), which is a heavier change than this warranted.
+
+## 2026-11-16 to 2026-11-17: repeated whole-server stalls, data disk 93% full
+
+### What happened
+
+- Four stalls in two days (first seen 2026-11-16 ~20:05 UTC; last 2026-11-17
+  ~19:20 UTC, ten minutes after a reset). Each time load average climbed past
+  60, every site timed out, SSH closed connections, and only a VM reset
+  recovered it.
+- Memory was not the cause: no OOM in the serial log, memory and I/O pressure
+  near zero during the stalls.
+
+### Cause (as far as the evidence goes; not reproduced)
+
+- The serial console shows the same kernel trace in every boot that stalled: a
+  write stuck in the ext4 block allocator (`ext4_writepages` →
+  `ext4_mb_regular_allocator` → `ext4_mb_load_buddy_gfp`), after which
+  `systemd-journald` could not be killed and everything writing to disk hung.
+- `/ssd` (the 200 GB `pd-ssd` data disk, holding `/ssd/docker` and
+  `/ssd/share`) was 93% full with 14 GB free. Mount option `stripe=0`, so the
+  known `stripe` allocator bug does not apply. Kernel `6.1.0-55-cloud-amd64`.
+- Root disk (40 GB `pd-balanced`) was 53% full and not involved.
+
+### What changed (2026-11-17 ~20:05 UTC)
+
+- Disk `ssd` grown from 200 GB to 300 GB, then `resize2fs` online.
+- `docker builder prune -af` (16.3 GB) and `docker image prune -af` (24.6 GB).
+- `/ssd` after: 151 GB used of 295 GB (52%).
+
+### Known gaps
+
+- The device letters for the two disks swap between boots (`/ssd` was
+  `/dev/sda`, then `/dev/sdb`); `/etc/fstab` uses UUIDs so mounts are fine, but
+  scripts must not hard-code the letter.
+- Nothing alerts on disk fill. `/ssd/docker` volumes hold 17.6 GB that no
+  container uses, and `/ssd/share/data` (50 GB), `/ssd/share/github` (29 GB)
+  and `/ssd/share/pg_backups` (20 GB) have not been reviewed.
+- An earlier `sudo journalctl` query during the second stall hung and may have
+  made it worse; avoid heavy reads on a host that is already stalling.
